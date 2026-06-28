@@ -2,6 +2,7 @@
 # Bot must be created with a Telegram Premium account for these to render.
 # Use @RawDataBot to get custom_emoji_id for any premium emoji.
 PREMIUM_EMOJI_IDS = {
+    "🐺": "5823543394982435031",   #. 🐺 dragon logo
     "✅": "6023660820544623088",   # ✨ Multi Sparkles / Celebration
     "🔥": "5999340396432333728",   # 🔥 Purple Flame Heart
     "❌": "6037570896766438989",   # 💀 White Skull (Dark Glow)
