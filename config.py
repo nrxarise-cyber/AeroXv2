@@ -9,3 +9,4 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 MONGO_URI = os.getenv("MONGO_URI")
 CHECKER_API_URL = os.getenv("CHECKER_API_URL") 
+OWNER_ID = int(os.getenv("OWNER_ID"))
