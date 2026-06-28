@@ -110,7 +110,7 @@ def _kb_progress(session_key: str) -> list:
 
 def _txt_main(first_name: str) -> str:
     return (
-        f"<b>⚡💳 ㅤ#𝒮𝒽𝑜𝓅𝒾𝒾𝒾  💳⚡</b>\n"
+        f"<b>🐺 𝑨 𝑬 𝑹 𝑶 𝑿 𝑨 𝑼 𝑻 𝑯</b>\n"
         f"<b>━━━━━━━━━━━━━━━━━</b>\n"
         f"<b>👋 Welcome back, {first_name}!</b>\n\n"
         f"<blockquote>Select an option from the menu below to get started.</blockquote>\n"
@@ -121,7 +121,7 @@ def _txt_main(first_name: str) -> str:
 
 def _txt_checker() -> str:
     return (
-        "<b>⚡💳 ㅤ#𝒮𝒽𝑜𝓅𝒾𝒾𝒾  💳⚡</b>\n"
+        "<b>🐺 𝑨 𝑬 𝑹 𝑶 𝑿 𝑨 𝑼 𝑻 𝑯 </b>\n"
         "<b>━━━━━━━━━━━━━━━━━</b>\n"
         "<b>⚡💠 𝐂𝐡𝐞𝐜𝐤𝐞𝐫 𝐆𝐚𝐭𝐞𝐰𝐚𝐲𝐬</b>\n\n"
         "<blockquote>Choose a payment gateway to check against.</blockquote>\n"
@@ -131,7 +131,7 @@ def _txt_checker() -> str:
 
 def _txt_shopify() -> str:
     return (
-        "<b>⚡💳 ㅤ#𝒮𝒽𝑜𝓅𝒾𝒾𝒾  💳⚡</b>\n"
+        "<b>🐺 𝑨 𝑬 𝑹 𝑶 𝑿 𝑨 𝑼 𝑻 𝑯</b>\n"
         "<b>━━━━━━━━━━━━━━━━━</b>\n"
         "<b>🛒 𝐒𝐡𝐨𝐩𝐢𝐟𝐲 𝐂𝐡𝐞𝐜𝐤𝐞𝐫</b>\n\n"
         "<blockquote>"
@@ -156,7 +156,7 @@ async def _txt_proxy(user_id: int) -> str:
         status = "❌ <b>No proxy set</b>"
 
     return (
-        "<b>⚡💳 ㅤ#𝒮𝒽𝑜𝓅𝒾𝒾𝒾  💳⚡</b>\n"
+        "<b>🐺 𝑨 𝑬 𝑹 𝑶 𝑿 𝑨 𝑼 𝑻 𝑯</b>\n"
         "<b>━━━━━━━━━━━━━━━━━</b>\n"
         "<b>📡 𝐏𝐫𝐨𝐱𝐲 𝐌𝐚𝐧𝐚𝐠𝐞𝐦𝐞𝐧𝐭</b>\n\n"
         f"<blockquote>Status: {status}</blockquote>\n"
@@ -175,7 +175,7 @@ async def _txt_profile(user_id: int) -> str:
     join_date = join_raw.strftime("%d %b %Y") if join_raw else "—"
 
     return (
-        "<b>⚡💳 ㅤ#𝒮𝒽𝑜𝓅𝒾𝒾𝒾  💳⚡</b>\n"
+        "<b>🐺 𝑨 𝑬 𝑹 𝑶 𝑿 𝑨 𝑼 𝑻 𝑯</b>\n"
         "<b>━━━━━━━━━━━━━━━━━</b>\n"
         "<b>👤 𝐏𝐫𝐨𝐟𝐢𝐥𝐞</b>\n\n"
         f"<blockquote>"
@@ -218,7 +218,7 @@ async def _txt_analytics(user_id: int) -> str:
     hit_bar     = "█" * bar_filled + "░" * bar_empty
 
     return (
-        "<b>⚡💳 ㅤ#𝒮𝒽𝑜𝓅𝒾𝒾𝒾  💳⚡</b>\n"
+        "<b>🐺 𝑨 𝑬 𝑹 𝑶 𝑿 𝑨 𝑼 𝑻 𝑯</b>\n"
         "<b>━━━━━━━━━━━━━━━━━</b>\n"
         "<b>📊 𝐀𝐧𝐚𝐥𝐲𝐭𝐢𝐜𝐬</b>\n\n"
         f"<blockquote>"
