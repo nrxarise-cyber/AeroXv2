@@ -108,7 +108,7 @@ def _txt_main(first_name: str) -> str:
         f"<b>👋 Welcome back, {first_name}!</b>\n\n"
         f"<blockquote>Select an option from the menu below to get started.</blockquote>\n"
         f"<b>━━━━━━━━━━━━━━━━━</b>\n"
-        f'🤖 <b>Bot By: <a href="tg://user?id=5248903529">ㅤㅤＫａｍａｌ</a></b>'
+        f'🤖 <b>Bot By: <a href="tg://user?id=1817159548"> ZEUSｌ</a></b>'
     )
 
 
@@ -257,7 +257,7 @@ def _txt_help() -> str:
         "<b>📌 Format</b>\n"
         "<blockquote><code>card|mm|yyyy|cvv</code></blockquote>\n"
         "<b>━━━━━━━━━━━━━━━━━</b>\n"
-        '🤖 <b>Bot By: <a href="tg://user?id=5248903529">ㅤㅤＫａｍａｌ</a></b>'
+        '🤖 <b>Bot By: <a href="tg://user?id=1817159548">ZEUSｌ</a></b>'
     )
 
 
@@ -340,7 +340,7 @@ def _build_hit_message(result: dict, bin_info: tuple) -> str:
         f"<pre>𝗕𝗜𝗡 𝗜𝗻𝗳𝗼: {brand} - {bin_type} - {level}\n"
         f"𝗕𝗮𝗻𝗸: {bank}\n𝗖𝗼𝘂𝗻𝘁𝗿𝘆: {country} {flag}</pre>\n"
         f"<b>━━━━━━━━━━━━━━━━━</b>\n\n"
-        f'🤖 <b>Bot By: <a href="tg://user?id=5248903529">ㅤㅤＫａｍａｌ</a></b>'
+        f'🤖 <b>Bot By: <a href="tg://user?id=1817159548">ZEUSｌ</a></b>'
     )
 
 
@@ -395,7 +395,7 @@ def _build_final_summary(results: dict) -> str:
         f"<b>🎯💠 𝐇𝐢𝐭𝐬</b>\n"
         f"<blockquote>{hits_text}</blockquote>\n"
         f"<b>━━━━━━━━━━━━━━━━━</b>\n\n"
-        f'🤖 <b>Bot By: <a href="tg://user?id=5248903529">ㅤㅤＫａｍａｌ</a></b>'
+        f'🤖 <b>Bot By: <a href="tg://user?id=1817159548">ZEUSｌ</a></b>'
     )
 
 
