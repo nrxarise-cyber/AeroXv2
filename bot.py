@@ -751,12 +751,12 @@ try:
             f"<b>━━━━━━━━━━━━━━━━━</b>\n\n"
             f'😵‍💫 <b>𝐁ᴏᴛ 𝐁ʏ: <a href="tg://user?id=1817159548">𝐙ᴇᴜ𝐬</a></b>'
            )
-            await status_msg.edit(premium_emoji(final_resp), parse_mode="html",
+            await status_msg.edit(premium_emoji(final_resp), parse_mode="html")
         
  except Exception as exc:
         await status_msg.edit(
             premium_emoji(f"❌ Error: {exc}"),
-            parse_mode="html",)
+            parse_mode="html")
 
 @bot.on(events.NewMessage(pattern=r"^/sh\s+"))  # <-- AB INDENT SAHI HAI (0 spaces)
 async def cmd_sh(event):
