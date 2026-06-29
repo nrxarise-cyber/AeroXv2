@@ -719,8 +719,7 @@ async def _do_single_check(event):
         ),
         parse_mode="html",
     )
-
-   try:
+try:
     result = await check_card_with_retry(card, sites, proxy, max_retries=3)
     bin_info = await get_bin_info(card.split("|")[0])
     brand, bin_type, level, bank, country, flag = bin_info
@@ -761,8 +760,6 @@ except Exception as exc:
         premium_emoji(f"❌ Error: {exc}"),
         parse_mode="html",
     )
-
-
 @bot.on(events.NewMessage(pattern=r"^/sh\s+"))
 async def cmd_sh(event):
     await _do_single_check(event)
