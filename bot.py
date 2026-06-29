@@ -721,42 +721,45 @@ async def _do_single_check(event):
     )
     
 try:
-        result = await check_card_with_retry(card, sites, proxy, max_retries=3)
-        bin_info = await get_bin_info(card.split("|")[0])
-        brand, bin_type, level, bank, country, flag = bin_info
+    result = await check_card_with_retry(card, sites, proxy, max_retries=3)
+    bin_info = await get_bin_info(card.split("|")[0])
+    brand, bin_type, level, bank, country, flag = bin_info
 
-        status_map = {
-            "Charged": ("✅", "𝐂𝐡𝐚𝐫𝐠𝐞𝐝"),
-            "Approved": ("🔥", "𝐋𝐢𝐯𝐞"),
-        }
-        status_emoji, status_text = status_map.get(
-            result["status"], ("❌", "𝐃𝐞𝐚𝐝")
-        )
+    status_map = {
+        "Charged": ("✅", "𝐂𝐡𝐚𝐫𝐠𝐞𝐝"),
+        "Approved": ("🔥", "𝐋𝐢𝐯𝐞"),
+    }
+    status_emoji, status_text = status_map.get(
+        result["status"], ("❌", "𝐃𝐞𝐚𝐝")
+    )
 
-        final_resp = (
-            f"<b>🐺 𝐀ᴇʀᴏ𝐗</b>\n"
-            f"<b>━━━━━━━━━━━━━━━━━</b>\n"
-            f"<b>⚡💠 𝐑ᴇ𝐬ᴜʟᴛ𝐬</b>\n"
-            f"<blockquote>{status_emoji} 𝐒ᴛᴀᴛᴜ𝐬: {status_text}</blockquote>\n"
-            f"<blockquote>💳 𝐂ᴀʀᴅ: <code>{result['card']}</code></blockquote>\n"
-            f"<blockquote>📝 𝐑ᴇ𝐬ᴘᴏɴ𝐬ᴇ: {result['message'][:150]}</blockquote>\n"
-            f"<blockquote>🌐 𝐆ᴀᴛᴇᴡᴀʏ: 🔥 {result.get('gateway','Unknown')} | 💰 {result.get('price','-')}</blockquote>\n"
-            f"<b>━━━━━━━━━━━━━━━━━</b>\n"
-            f"<b>🎯💠 𝐁ɪɴ 𝐈ɴғᴏ</b>\n"
-            f"<pre>"
-            f"𝐁ɪɴ : {brand} - {bin_type} - {level}\n"
-            f"𝐁ᴀɴᴋ : {bank}\n"
-            f"𝐂ᴏᴜɴᴛʀʏ : {country} {flag}"
-            f"</pre>\n"
-            f"<b>━━━━━━━━━━━━━━━━━</b>\n\n"
-            f'😵‍💫 <b>𝐁ᴏᴛ 𝐁ʏ: <a href="tg://user?id=1817159548">𝐙ᴇᴜ𝐬</a></b>'
-           )
-            await status_msg.edit(premium_emoji(final_resp), parse_mode="html")
+    final_resp = (
+        f"<b>🐺 𝐀ᴇʀᴏ𝐗</b>\n"
+        f"<b>━━━━━━━━━━━━━━━━━</b>\n"
+        f"<b>⚡💠 𝐑ᴇ𝐬ᴜʟ𝐭𝐬</b>\n"
+        f"<blockquote>{status_emoji} 𝐒ᴛᴀᴛᴜ𝐬: {status_text}</blockquote>\n"
+        f"<blockquote>💳 𝐂ᴀʀᴅ: <code>{result['card']}</code></blockquote>\n"
+        f"<blockquote>📝 𝐑ᴇ𝐬ᴘᴏɴ𝐬ᴇ: {result['message'][:150]}</blockquote>\n"
+        f"<blockquote>🌐 𝐆ᴀᴛᴇᴡᴀʏ: 🔥 {result.get('gateway','Unknown')} | 💰 {result.get('price','-')}</blockquote>\n"
+        f"<b>━━━━━━━━━━━━━━━━━</b>\n"
+        f"<b>🎯💠 𝐁ɪɴ 𝐈ɴғᴏ</b>\n"
+        f"<pre>"
+        f"𝐁ɪɴ : {brand} - {bin_type} - {level}\n"
+        f"𝐁ᴀɴᴋ : {bank}\n"
+        f"𝐂ᴏᴜɴᴛʀʏ : {country} {flag}"
+        f"</pre>\n"
+        f"<b>━━━━━━━━━━━━━━━━━</b>\n\n"
+        f'😵‍💫 <b>𝐁ᴏᴛ 𝐁ʏ: <a href="tg://user?id=1817159548">𝐙ᴇᴜ𝐬</a></b>'
+    )
+    # Ye line upar wali line ke barabar honi chahiye
+    await status_msg.edit(premium_emoji(final_resp), parse_mode="html")
         
- except Exception as exc:
-        await status_msg.edit(
-            premium_emoji(f"❌ Error: {exc}"),
-            parse_mode="html")
+except Exception as exc:
+    # 'except' hamesha 'try' ki seedh mein hona chahiye
+    await status_msg.edit(
+        premium_emoji(f"❌ Error: {exc}"),
+        parse_mode="html"
+    )
 
 @bot.on(events.NewMessage(pattern=r"^/sh\s+"))  # <-- AB INDENT SAHI HAI (0 spaces)
 async def cmd_sh(event):
