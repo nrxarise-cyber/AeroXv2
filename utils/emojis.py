@@ -31,7 +31,7 @@ PREMIUM_EMOJI_IDS = {
     "🐻": "6062026539334109188",  # Powered By
     "🛑": "6172478697161888759",  # Warning / Error
 }
-}
+
 
 
 def premium_emoji(text: str) -> str:
