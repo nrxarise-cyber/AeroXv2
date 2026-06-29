@@ -747,7 +747,7 @@ async def _do_single_check(event):
     f"𝐂ᴏᴜɴᴛʀʏ : {country} {flag}"
     f"</pre>\n"
     f"<b>━━━━━━━━━━━━━━━━━</b>\n\n"
-)
+
         )
         await status_msg.edit(premium_emoji(final_resp), parse_mode="html")
 
