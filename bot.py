@@ -74,10 +74,12 @@ def _kb_shopify() -> list:
 
 def _kb_proxy() -> list:
     return [
-        [Button.inline("➕  𝘚𝘦𝘵 Proxy",    b"proxy:set"),
-         Button.inline("👁  𝘝𝘪𝘦𝘸 𝘗𝘳𝘰𝘹𝘺",   b"proxy:view")],
-        [Button.inline("🗑  𝘙𝘦𝘮𝘰𝘷𝘦 𝘗roxy", b"proxy:remove"),
-         Button.inline("🔄  𝘊𝘩𝘦𝘤𝘬 𝘗𝘳𝘰𝘹𝘺,  b"proxy:check")],
+        [Button.inline("➕  𝘚𝘦𝘵 Proxy", b"proxy:set"),
+         Button.inline("👁  𝘝𝘪𝘦𝘸 𝘗𝘳𝘰𝘹𝘺", b"proxy:view")],
+
+        [Button.inline("🗑  𝘙𝘦𝘮𝘰𝘷𝘦 𝘗𝘳𝘰𝘹𝘺", b"proxy:remove"),
+         Button.inline("🔄  𝘊𝘩𝘦𝘤𝘬 𝘗𝘳𝘰𝘹𝘺", b"proxy:check")],
+
         [Button.inline("🔙  𝘉𝘢𝘤𝘬", b"menu:main")],
     ]
 
