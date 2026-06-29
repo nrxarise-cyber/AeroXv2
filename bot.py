@@ -756,13 +756,11 @@ try:
             premium_emoji(final_resp),
             parse_mode="html",
         )
-
-    except Exception as exc:
+ except Exception as exc:
         await status_msg.edit(
             premium_emoji(f"❌ Error: {exc}"),
             parse_mode="html",
         )
-
 @bot.on(events.NewMessage(pattern=r"^/sh\s+"))  # <-- AB INDENT SAHI HAI (0 spaces)
 async def cmd_sh(event):
     await _do_single_check(event)
