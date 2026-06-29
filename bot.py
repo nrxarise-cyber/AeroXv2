@@ -341,6 +341,7 @@ def _build_hit_message(result: dict, bin_info: tuple) -> str:
     brand, bin_type, level, bank, country, flag = bin_info
     emoji       = "✅" if result["status"] == "Charged" else "🔥"
     status_text = "𝐂𝐡𝐚𝐫𝐠𝐞𝐝" if result["status"] == "Charged" else "𝐋𝐢𝐯𝐞"
+    
 return (
     f"<b>🐺 𝐀ᴇʀᴏ𝐗</b>\n"
     f"<b>━━━━━━━━━━━━━━━━━</b>\n"
