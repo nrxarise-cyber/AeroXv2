@@ -171,35 +171,35 @@ async def _txt_profile(user_id: int) -> str:
     user = await get_user(user_id)
     stats = await get_user_stats(user_id)
 
-    username  = (user or {}).get("username", f"user_{user_id}")
+    username = (user or {}).get("username", f"user_{user_id}")
     first_name = (user or {}).get("first_name", "—")
-    plan      = "⭐ Premium" if (user or {}).get("premium") else "🔓 Free"
-    join_raw  = (user or {}).get("join_date")
+    plan = "⭐ Premium" if (user or {}).get("premium") else "🔓 Free"
+    join_raw = (user or {}).get("join_date")
     join_date = join_raw.strftime("%d %b %Y") if join_raw else "—"
-return (
-    "<b>🐺 𝐀ᴇʀᴏ𝐗</b>\n"
-    "<b>━━━━━━━━━━━━━━━━━</b>\n"
-    "<b>💃 𝐏ʀᴏғɪʟᴇ</b>\n\n"
-    f"<blockquote>"
-    f"🚀 <b>𝐔𝐬ᴇʀ 𝐈𝐃:</b> <code>{user_id}</code>\n"
-    f"🙂 <b>𝐍ᴀᴍᴇ:</b> {first_name}\n"
-    f"☄️ <b>𝐔𝐬ᴇʀɴᴀᴍᴇ:</b> @{username}\n"
-    f"🚀 <b>𝐏ʟᴀɴ:</b> {plan}\n"
-    f"📆 <b>𝐉ᴏɪɴᴇᴅ:</b> {join_date}"
-    f"</blockquote>\n"
-    "<b>━━━━━━━━━━━━━━━━━</b>\n"
-    "<b>📊 𝐒ᴛᴀᴛ𝐬</b>\n\n"
-    f"<blockquote>"
-    f"📅 <b>𝐓ᴏᴛᴀʟ 𝐂ʜᴇᴄᴋ𝐬:</b> {stats['total_checked']:,}\n"
-    f"📸 <b>𝐂ʜᴀʀɢᴇᴅ:</b> {stats['total_charged']:,}\n"
-    f"🎥 <b>𝐀ᴘᴘʀᴏᴠᴇᴅ:</b> {stats['total_approved']:,}\n"
-    f"😅 <b>𝐓ᴏᴛᴀʟ 𝐇ɪᴛ𝐬:</b> {stats['total_hits']:,}\n"
-    f"⚽️ <b>𝐇ɪᴛ 𝐑ᴀᴛᴇ:</b> {stats['hit_rate']}%"
-    f"</blockquote>\n"
-    "<b>━━━━━━━━━━━━━━━━━</b>\n\n"
-    "<b>🐻 𝑷𝒐𝒘𝒆𝒓𝒆𝒅 𝒃𝒚 𝑨𝒆𝒓𝒐𝑿</b>"
-)
 
+    return (
+        "<b>🐺 𝐀ᴇʀᴏ𝐗</b>\n"
+        "<b>━━━━━━━━━━━━━━━━━</b>\n"
+        "<b>💃 𝐏ʀᴏғɪʟᴇ</b>\n\n"
+        f"<blockquote>"
+        f"🚀 <b>𝐔𝐬ᴇʀ 𝐈𝐃:</b> <code>{user_id}</code>\n"
+        f"🙂 <b>𝐍ᴀᴍᴇ:</b> {first_name}\n"
+        f"☄️ <b>𝐔𝐬ᴇʀɴᴀᴍᴇ:</b> @{username}\n"
+        f"🚀 <b>𝐏ʟᴀɴ:</b> {plan}\n"
+        f"📆 <b>𝐉ᴏɪɴᴇᴅ:</b> {join_date}"
+        f"</blockquote>\n"
+        "<b>━━━━━━━━━━━━━━━━━</b>\n"
+        "<b>📊 𝐒ᴛᴀᴛ𝐬</b>\n\n"
+        f"<blockquote>"
+        f"📅 <b>𝐓ᴏᴛᴀʟ 𝐂ʜᴇᴄᴋ𝐬:</b> {stats['total_checked']:,}\n"
+        f"📸 <b>𝐂ʜᴀʀ𝐠ᴇᴅ:</b> {stats['total_charged']:,}\n"
+        f"🎥 <b>𝐀ᴘᴘʀᴏᴠᴇᴅ:</b> {stats['total_approved']:,}\n"
+        f"😅 <b>𝐓ᴏᴛᴀʟ 𝐇ɪᴛ𝐬:</b> {stats['total_hits']:,}\n"
+        f"⚽️ <b>𝐇ɪᴛ 𝐑ᴀᴛᴇ:</b> {stats['hit_rate']}%"
+        f"</blockquote>\n"
+        "<b>━━━━━━━━━━━━━━━━━</b>\n\n"
+        "<b>🐻 𝑷𝒐𝒘𝒆𝒓𝒆𝒅 𝒃𝒚 𝑨𝒆𝒓𝒐𝑿</b>"
+    )
 
 async def _txt_analytics(user_id: int) -> str:
     stats   = await get_user_stats(user_id)
