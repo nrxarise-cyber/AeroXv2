@@ -49,52 +49,52 @@ active_sessions: dict = {}
 
 def _kb_main() -> list:
     return [
-        [Button.inline("💳  Checker", b"menu:checker"),  Button.inline("📡  Proxy",   b"menu:proxy")],
-        [Button.inline("👤  Profile", b"menu:profile"),  Button.inline("❓  Help",    b"menu:help")],
+        [Button.inline("💳 𝐂ʜᴇᴄᴋᴇʀ", b"menu:checker"),  Button.inline("📡  𝐏ʀᴏxʏ",   b"menu:proxy")],
+        [Button.inline("👤  𝐏ʀᴏғɪʟᴇ", b"menu:profile"),  Button.inline("❓  𝐇ᴇʟᴘ",    b"menu:help")],
     ]
 
 
 def _kb_checker() -> list:
     return [
-        [Button.inline("🛒  Shopify",              b"menu:shopify")],
-        [Button.inline("💳  Stripe  (Coming Soon)", b"noop"),
-         Button.inline("🟣  Braintree  (Coming Soon)", b"noop")],
+        [Button.inline("🛒  𝘚𝘩𝘰𝘱𝘪𝘧𝘺",              b"menu:shopify")],
+        [Button.inline("💳  𝘚𝘵𝘳𝘪𝘱𝘦 (Coming Soon)", b"noop"),
+         Button.inline("🟣  𝘙𝘢𝘻𝘰𝘳𝘱𝘢𝘺  (Coming Soon)", b"noop")],
         [Button.inline("🔙  Back", b"menu:main")],
     ]
 
 
 def _kb_shopify() -> list:
     return [
-        [Button.inline("⚡ Single  /sh",    b"noop"),
-         Button.inline("📋 Multi   /msh",   b"noop")],
-        [Button.inline("📂 TXT File  /shtxt", b"noop")],
-        [Button.inline("🔙  Back", b"menu:checker")],
+        [Button.inline("⚡ 𝘚𝘪𝘯𝘨𝘭𝘦  /sh",    b"noop"),
+         Button.inline("📋 𝘔𝘶𝘵𝘪   /msh",   b"noop")],
+        [Button.inline("📂 T𝘹𝘵 𝘍𝘪𝘭𝘦  /shtxt", b"noop")],
+        [Button.inline("🔙  𝘉𝘢𝘤𝘬", b"menu:checker")],
     ]
 
 
 def _kb_proxy() -> list:
     return [
-        [Button.inline("➕  Set Proxy",    b"proxy:set"),
-         Button.inline("👁  View Proxy",   b"proxy:view")],
-        [Button.inline("🗑  Remove Proxy", b"proxy:remove"),
-         Button.inline("🔄  Check Proxy",  b"proxy:check")],
-        [Button.inline("🔙  Back", b"menu:main")],
+        [Button.inline("➕  𝘚𝘦𝘵 Proxy",    b"proxy:set"),
+         Button.inline("👁  𝘝𝘪𝘦𝘸 𝘗𝘳𝘰𝘹𝘺",   b"proxy:view")],
+        [Button.inline("🗑  𝘙𝘦𝘮𝘰𝘷𝘦 𝘗roxy", b"proxy:remove"),
+         Button.inline("🔄  𝘊𝘩𝘦𝘤𝘬 𝘗𝘳𝘰𝘹𝘺,  b"proxy:check")],
+        [Button.inline("🔙  𝘉𝘢𝘤𝘬", b"menu:main")],
     ]
 
 
 def _kb_profile() -> list:
     return [
-        [Button.inline("📊  Analytics", b"menu:analytics")],
-        [Button.inline("🔙  Back",      b"menu:main")],
+        [Button.inline("📊  𝘈𝘯𝘢𝘭𝘺𝘵𝘪𝘤𝘴", b"menu:analytics")],
+        [Button.inline("🔙  𝘉𝘢𝘤𝘬",      b"menu:main")],
     ]
 
 
 def _kb_back_main() -> list:
-    return [[Button.inline("🔙  Back", b"menu:main")]]
+    return [[Button.inline("🔙  𝘉𝘢𝘤𝘬", b"menu:main")]]
 
 
 def _kb_back_profile() -> list:
-    return [[Button.inline("🔙  Back", b"menu:profile")]]
+    return [[Button.inline("🔙  𝘉𝘢𝘤𝘬", b"menu:profile")]]
 
 
 def _kb_progress(session_key: str) -> list:
@@ -123,8 +123,8 @@ def _txt_checker() -> str:
     return (
         "<b>🐺 𝑨 𝑬 𝑹 𝑶 𝑿 𝑨 𝑼 𝑻 𝑯 </b>\n"
         "<b>━━━━━━━━━━━━━━━━━</b>\n"
-        "<b>⚡💠 𝐂𝐡𝐞𝐜𝐤𝐞𝐫 𝐆𝐚𝐭𝐞𝐰𝐚𝐲𝐬</b>\n\n"
-        "<blockquote>Choose a payment gateway to check against.</blockquote>\n"
+        "<b> 𝑮𝑨𝑻𝑬𝑾𝑨𝒀𝑺 </b>\n\n"
+        "<blockquote>𝑺𝒆𝒍𝒆𝒄𝒕 𝒀𝒐𝒖𝒓 𝑷𝒓𝒆𝒇𝒆𝒓𝒓𝒆𝒅 𝑮𝒂𝒕𝒆𝒘𝒂𝒚 𝑻𝒐 𝑩𝒆𝒈𝒊𝒏 𝑪𝒉𝒆𝒄𝒌𝒊𝒏𝒈.</blockquote>"
         "<b>━━━━━━━━━━━━━━━━━</b>"
     )
 
@@ -133,14 +133,14 @@ def _txt_shopify() -> str:
     return (
         "<b>🐺 𝑨 𝑬 𝑹 𝑶 𝑿 𝑨 𝑼 𝑻 𝑯</b>\n"
         "<b>━━━━━━━━━━━━━━━━━</b>\n"
-        "<b>🛒 𝐒𝐡𝐨𝐩𝐢𝐟𝐲 𝐂𝐡𝐞𝐜𝐤𝐞𝐫</b>\n\n"
+        "<b>𝑺𝑯𝑶𝑷𝑰𝑭𝒀</b>\n\n"
         "<blockquote>"
         "⚡ <b>/sh</b> <code>card|mm|yy|cvv</code>\n"
-        "   Single card check\n\n"
+        "   𝑺𝒊𝒏𝒈𝒍𝒆 𝑪𝒂𝒓𝒅 𝑪𝒉𝒆𝒄𝒌\n\n"
         "📋 <b>/msh</b>\n"
-        "   Paste multiple cards (one per line)\n\n"
+        " 𝑷𝒂𝒔𝒕𝒆 𝑴𝒖𝒕𝒊𝒑𝒍𝒆 𝑪𝒂𝒓𝒅𝒔 (one per line)\n\n"
         "📂 <b>/shtxt</b>\n"
-        "   Reply to a <code>.txt</code> file to bulk-check"
+        " 𝑹𝒆𝒑𝒍𝒚 𝑻𝒐 𝒂 <code>.𝒕𝒙𝒕</code> 𝑭𝒊𝒍𝒆 𝑻𝒐 𝑩𝒖𝒍𝒌-𝑪𝒉𝒆𝒄𝒌"
         "</blockquote>\n"
         "<b>━━━━━━━━━━━━━━━━━</b>"
     )
@@ -151,14 +151,15 @@ async def _txt_proxy(user_id: int) -> str:
     if proxy:
         parts = proxy.split(":")
         display = f"<code>{parts[0]}:{parts[1]}:***:***</code>" if len(parts) >= 2 else f"<code>{proxy}</code>"
-        status = f"✅ <b>Proxy Set</b>\n{display}"
+        status = f"✅ <b>𝑷𝒓𝒐𝒙𝒚 𝑹𝒆𝒂𝒅𝒚</b>\n{display}"
     else:
-        status = "❌ <b>No proxy set</b>"
+        status = "❌ <b>𝑵𝒐 𝑷𝒓𝒐𝒙𝒚 𝑺𝒆𝒕</b>"
 
     return (
         "<b>🐺 𝑨 𝑬 𝑹 𝑶 𝑿 𝑨 𝑼 𝑻 𝑯</b>\n"
         "<b>━━━━━━━━━━━━━━━━━</b>\n"
-        "<b>📡 𝐏𝐫𝐨𝐱𝐲 𝐌𝐚𝐧𝐚𝐠𝐞𝐦𝐞𝐧𝐭</b>\n\n"
+        "<b>📡 𝑷𝑹𝑶𝑿𝒀 𝑽𝑨𝑼𝑳𝑻 </b>\n\n"
+        "<blockquote>𝑪𝒐𝒏𝒇𝒊𝒈𝒖𝒓𝒆 𝒀𝒐𝒖𝒓 𝑷𝒓𝒊𝒗𝒂𝒕𝒆 𝑷𝒓𝒐𝒙𝒚 𝑭𝒐𝒓 𝑶𝒑𝒕𝒊𝒎𝒂𝒍 𝑷𝒆𝒓𝒇𝒐𝒓𝒎𝒂𝒏𝒄𝒆.</blockquote>"
         f"<blockquote>Status: {status}</blockquote>\n"
         "<b>━━━━━━━━━━━━━━━━━</b>"
     )
@@ -173,29 +174,29 @@ async def _txt_profile(user_id: int) -> str:
     plan      = "⭐ Premium" if (user or {}).get("premium") else "🔓 Free"
     join_raw  = (user or {}).get("join_date")
     join_date = join_raw.strftime("%d %b %Y") if join_raw else "—"
-
-    return (
-        "<b>🐺 𝑨 𝑬 𝑹 𝑶 𝑿 𝑨 𝑼 𝑻 𝑯</b>\n"
-        "<b>━━━━━━━━━━━━━━━━━</b>\n"
-        "<b>👤 𝐏𝐫𝐨𝐟𝐢𝐥𝐞</b>\n\n"
-        f"<blockquote>"
-        f"🆔 <b>User ID:</b> <code>{user_id}</code>\n"
-        f"👤 <b>Name:</b> {first_name}\n"
-        f"📛 <b>Username:</b> @{username}\n"
-        f"💎 <b>Plan:</b> {plan}\n"
-        f"📅 <b>Joined:</b> {join_date}"
-        f"</blockquote>\n"
-        "<b>━━━━━━━━━━━━━━━━━</b>\n"
-        "<b>📊 𝐒𝐭𝐚𝐭𝐬</b>\n\n"
-        f"<blockquote>"
-        f"🔍 <b>Total Checks:</b> {stats['total_checked']:,}\n"
-        f"✅ <b>Charged:</b> {stats['total_charged']:,}\n"
-        f"🔥 <b>Approved:</b> {stats['total_approved']:,}\n"
-        f"🎯 <b>Total Hits:</b> {stats['total_hits']:,}\n"
-        f"📈 <b>Hit Rate:</b> {stats['hit_rate']}%"
-        f"</blockquote>\n"
-        "<b>━━━━━━━━━━━━━━━━━</b>"
-    )
+return (
+    "<b>🐺 𝐀ᴇʀᴏ𝐗</b>\n"
+    "<b>━━━━━━━━━━━━━━━━━</b>\n"
+    "<b>💃 𝐏ʀᴏғɪʟᴇ</b>\n\n"
+    f"<blockquote>"
+    f"🚀 <b>𝐔𝐬ᴇʀ 𝐈𝐃:</b> <code>{user_id}</code>\n"
+    f"🙂 <b>𝐍ᴀᴍᴇ:</b> {first_name}\n"
+    f"☄️ <b>𝐔𝐬ᴇʀɴᴀᴍᴇ:</b> @{username}\n"
+    f"🚀 <b>𝐏ʟᴀɴ:</b> {plan}\n"
+    f"📆 <b>𝐉ᴏɪɴᴇᴅ:</b> {join_date}"
+    f"</blockquote>\n"
+    "<b>━━━━━━━━━━━━━━━━━</b>\n"
+    "<b>📊 𝐒ᴛᴀᴛ𝐬</b>\n\n"
+    f"<blockquote>"
+    f"📅 <b>𝐓ᴏᴛᴀʟ 𝐂ʜᴇᴄᴋ𝐬:</b> {stats['total_checked']:,}\n"
+    f"📸 <b>𝐂ʜᴀʀɢᴇᴅ:</b> {stats['total_charged']:,}\n"
+    f"🎥 <b>𝐀ᴘᴘʀᴏᴠᴇᴅ:</b> {stats['total_approved']:,}\n"
+    f"😅 <b>𝐓ᴏᴛᴀʟ 𝐇ɪᴛ𝐬:</b> {stats['total_hits']:,}\n"
+    f"⚽️ <b>𝐇ɪᴛ 𝐑ᴀᴛᴇ:</b> {stats['hit_rate']}%"
+    f"</blockquote>\n"
+    "<b>━━━━━━━━━━━━━━━━━</b>\n\n"
+    "<b>🐻 𝑷𝒐𝒘𝒆𝒓𝒆𝒅 𝒃𝒚 𝑨𝒆𝒓𝒐𝑿</b>"
+)
 
 
 async def _txt_analytics(user_id: int) -> str:
@@ -224,10 +225,10 @@ async def _txt_analytics(user_id: int) -> str:
         f"<blockquote>"
         f"📦 <b>Sessions:</b> {stats['sessions']}\n"
         f"🔍 <b>Cards Checked:</b> {stats['total_checked']:,}\n"
-        f"✅ <b>Charged:</b> {stats['total_charged']:,}\n"
-        f"🔥 <b>Approved:</b> {stats['total_approved']:,}\n"
-        f"🎯 <b>Total Hits:</b> {stats['total_hits']:,}\n"
-        f"📈 <b>Hit Rate:</b> {stats['hit_rate']}%\n"
+        f"📷 <b>Charged:</b> {stats['total_charged']:,}\n"
+        f"🎥 <b>Approved:</b> {stats['total_approved']:,}\n"
+        f"😅 <b>Total Hits:</b> {stats['total_hits']:,}\n"
+        f"⚽ <b>Hit Rate:</b> {stats['hit_rate']}%\n"
         f"<code>[{hit_bar}] {stats['hit_rate']}%</code>"
         f"</blockquote>\n"
         "<b>━━━━━━━━━━━━━━━━━</b>\n"
@@ -236,38 +237,42 @@ async def _txt_analytics(user_id: int) -> str:
         "<b>━━━━━━━━━━━━━━━━━</b>"
     )
 
-
 def _txt_help() -> str:
     return (
-        "<b>⚡💳 ㅤ#𝒮𝒽𝑜𝓅𝒾𝒾𝒾  💳⚡</b>\n"
-        "<b>━━━━━━━━━━━━━━━━━</b>\n"
-        "<b>❓ 𝐇𝐞𝐥𝐩 &amp; 𝐂𝐨𝐦𝐦𝐚𝐧𝐝𝐬</b>\n\n"
-        "<b>💳 Checker</b>\n"
-        "<blockquote>"
-        "/sh <code>card|mm|yy|cvv</code> — Single check\n"
-        "/msh — Multi check (paste cards)\n"
-        "/shtxt — Bulk check (reply to .txt)"
-        "</blockquote>\n\n"
-        "<b>📡 Proxy</b>\n"
-        "<blockquote>"
-        "/addproxy <code>ip:port:user:pass</code> — Set proxy\n"
-        "/getproxy — View your proxy\n"
-        "/rmproxy — Remove your proxy\n"
-        "/chkproxy — Test your proxy"
-        "</blockquote>\n\n"
-        "<b>🌐 Sites (Admin)</b>\n"
-        "<blockquote>"
-        "/addsite <code>url</code> — Add a site\n"
-        "/rm <code>url</code> — Remove a site\n"
-        "/site — Check &amp; mark dead sites"
-        "</blockquote>\n\n"
-        "<b>📌 Format</b>\n"
-        "<blockquote><code>card|mm|yyyy|cvv</code></blockquote>\n"
-        "<b>━━━━━━━━━━━━━━━━━</b>\n"
-        '🤖 <b>Bot By: <a href="tg://user?id=1817159548">ZEUSｌ</a></b>'
-    )
+    "<b>🐺 𝐀ᴇʀᴏ𝐗</b>\n"
+    "<b>━━━━━━━━━━━━━━━━━</b>\n"
+    "<b>❓ 𝐇ᴇʟᴘ & 𝐂ᴏᴍᴍᴀɴᴅ𝐬</b>\n\n"
 
+    "<blockquote>𝑸𝒖𝒊𝒄𝒌 𝐂ᴏᴍᴍᴀɴᴅ 𝐑ᴇғᴇʀᴇɴᴄᴇ.</blockquote>\n\n"
 
+    "<b>💳 𝐂ʜᴇᴄᴋᴇʀ</b>\n"
+    "<blockquote>"
+    "/sh <code>card|mm|yy|cvv</code> — 𝐒ɪɴɢʟᴇ 𝐂ʜᴇᴄᴋ\n"
+    "/msh — 𝐌ᴜʟᴛɪ 𝐂ʜᴇᴄᴋ\n"
+    "/shtxt — 𝐁ᴜʟᴋ 𝐂ʜᴇᴄᴋ"
+    "</blockquote>\n\n"
+
+    "<b>📡 𝐏ʀᴏxʏ</b>\n"
+    "<blockquote>"
+    "/addproxy <code>ip:port:user:pass</code> — 𝐒ᴇᴛ 𝐏ʀᴏxʏ\n"
+    "/getproxy — 𝐕ɪᴇᴡ 𝐏ʀᴏxʏ\n"
+    "/rmproxy — 𝐑ᴇᴍᴏᴠᴇ 𝐏ʀᴏxʏ\n"
+    "/chkproxy — 𝐓ᴇ𝐬ᴛ 𝐏ʀᴏxʏ"
+    "</blockquote>\n\n"
+
+    "<b>🌐 𝐒ɪᴛᴇ𝐬 (𝐀ᴅᴍɪɴ)</b>\n"
+    "<blockquote>"
+    "/addsite <code>url</code> — 𝐀ᴅᴅ 𝐒ɪᴛᴇ\n"
+    "/rm <code>url</code> — 𝐑ᴇᴍᴏᴠᴇ 𝐒ɪᴛᴇ\n"
+    "/site — 𝐂ʜᴇᴄᴋ 𝐒ɪᴛᴇ𝐬"
+    "</blockquote>\n\n"
+
+    "<b>📌 𝐂ᴀʀᴅ 𝐅ᴏʀᴍᴀᴛ</b>\n"
+    "<blockquote><code>card|mm|yyyy|cvv</code></blockquote>\n"
+
+    "<b>━━━━━━━━━━━━━━━━━</b>\n"
+    '😵‍💫 <b>𝐁ᴏᴛ 𝐁ʏ ~ <a href="tg://user?id=1817159548">𝐙ᴇᴜ𝐬</a></b>'
+)
 # ═══════════════════════════════════════════════════════════════════════════════
 # SHARED GUARDS
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -334,22 +339,22 @@ def _build_hit_message(result: dict, bin_info: tuple) -> str:
     brand, bin_type, level, bank, country, flag = bin_info
     emoji       = "✅" if result["status"] == "Charged" else "🔥"
     status_text = "𝐂𝐡𝐚𝐫𝐠𝐞𝐝" if result["status"] == "Charged" else "𝐋𝐢𝐯𝐞"
-
-    return (
-        f"<b>⚡💳 ㅤ#𝒮𝒽𝑜𝓅𝒾𝒾𝒾  💳⚡</b>\n"
-        f"<b>━━━━━━━━━━━━━━━━━</b>\n"
-        f"<b>⚡💠 𝐇𝐢𝐭 𝐅𝐨𝐮𝐧𝐝!</b>\n"
-        f"<blockquote>{emoji} Status: {status_text}</blockquote>\n"
-        f"<blockquote>💳 Card: <code>{result['card']}</code></blockquote>\n"
-        f"<blockquote>📝 Response: {result['message'][:150]}</blockquote>\n"
-        f"<blockquote>🌐 𝐆𝐚𝐭𝐞𝐰𝐚𝐲: 🔥 {result.get('gateway','Unknown')} | 💰 {result.get('price','-')}</blockquote>\n"
-        f"<b>━━━━━━━━━━━━━━━━━</b>\n"
-        f"<b>🎯💠 𝐁𝐈𝐍 𝐈𝐧𝐟𝐨</b>\n"
-        f"<pre>𝗕𝗜𝗡 𝗜𝗻𝗳𝗼: {brand} - {bin_type} - {level}\n"
-        f"𝗕𝗮𝗻𝗸: {bank}\n𝗖𝗼𝘂𝗻𝘁𝗿𝘆: {country} {flag}</pre>\n"
-        f"<b>━━━━━━━━━━━━━━━━━</b>\n\n"
-        f'🤖 <b>Bot By: <a href="tg://user?id=1817159548">ZEUSｌ</a></b>'
-    )
+return (
+    f"<b>🐺 𝐀ᴇʀᴏ𝐗</b>\n"
+    f"<b>━━━━━━━━━━━━━━━━━</b>\n"
+    f"<b>⚡ 𝐇ɪᴛ 𝐅ᴏᴜɴᴅ!</b>\n"
+    f"<blockquote>{emoji} 𝐒ᴛᴀᴛᴜ𝐬: {status_text}</blockquote>\n"
+    f"<blockquote>💳 𝐂ᴀʀᴅ: <code>{result['card']}</code></blockquote>\n"
+    f"<blockquote>📝 𝐑ᴇ𝐬ᴘᴏɴ𝐬ᴇ: {result['message'][:150]}</blockquote>\n"
+    f"<blockquote>🌐 𝐆ᴀᴛᴇᴡᴀʏ: 🔥 {result.get('gateway','Unknown')} | 💰 {result.get('price','-')}</blockquote>\n"
+    f"<b>━━━━━━━━━━━━━━━━━</b>\n"
+    f"<b>⚡ 𝐁ɪɴ 𝐈ɴғᴏ</b>\n"
+    f"<pre>𝐁ɪɴ : {brand} - {bin_type} - {level}\n"
+    f"𝐁ᴀɴᴋ : {bank}\n"
+    f"𝐂ᴏᴜɴᴛʀʏ : {country} {flag}</pre>\n"
+    f"<b>━━━━━━━━━━━━━━━━━</b>\n\n"
+    f'😵‍💫 <b>𝐁ᴏᴛ 𝐁ʏ: <a href="tg://user?id=1817159548">𝐙ᴇᴜ𝐬</a></b>'
+)
 
 
 def _build_progress_message(results: dict, checked: int) -> str:
@@ -360,21 +365,20 @@ def _build_progress_message(results: dict, checked: int) -> str:
         else (results["approved"][0]["gateway"] if results["approved"] else "Unknown")
     )
     return (
-        f"<b>⚡💳 ㅤ#𝒮𝒽𝑜𝓅𝒾𝒾𝒾  💳⚡</b>\n"
-        f"<b>━━━━━━━━━━━━━━━━━</b>\n"
-        f"<b>⚡💠 𝐏𝐫𝐨𝐠𝐫𝐞𝐬𝐬</b>\n"
-        f"<blockquote>"
-        f"💳 Total: {results['total']} | "
-        f"✅ {len(results['charged'])} | "
-        f"🔥 {len(results['approved'])} | "
-        f"❌ {len(results['dead'])}"
-        f"</blockquote>\n"
-        f"<blockquote>📊 Checked: {checked}/{results['total']}</blockquote>\n"
-        f"<blockquote>🌐 𝐆𝐚𝐭𝐞𝐰𝐚𝐲: 🔥 {gateway}</blockquote>\n"
-        f"<blockquote>⏱️ Time: {format_elapsed(elapsed)}</blockquote>\n"
-        f"<b>━━━━━━━━━━━━━━━━━</b>"
-    )
-
+    f"<b>🐺 𝐀ᴇʀᴏ𝐗</b>\n"
+    f"<b>━━━━━━━━━━━━━━━━━</b>\n"
+    f"<b>⚡💠 𝐏ʀᴏɢʀᴇ𝐬𝐬</b>\n"
+    f"<blockquote>"
+    f"💳 𝐓ᴏᴛᴀʟ: {results['total']} | "
+    f"✅ {len(results['charged'])} | "
+    f"🔥 {len(results['approved'])} | "
+    f"❌ {len(results['dead'])}"
+    f"</blockquote>\n"
+    f"<blockquote>📊 𝐂ʜᴇᴄᴋᴇᴅ: {checked}/{results['total']}</blockquote>\n"
+    f"<blockquote>🌐 𝐆ᴀᴛᴇᴡᴀʏ: 🔥 {gateway}</blockquote>\n"
+    f"<blockquote>⏱️ 𝐓ɪᴍᴇ: {format_elapsed(elapsed)}</blockquote>\n"
+    f"<b>━━━━━━━━━━━━━━━━━</b>"
+)
 
 def _build_final_summary(results: dict) -> str:
     elapsed = int(time.time() - results["start_time"])
@@ -392,20 +396,19 @@ def _build_final_summary(results: dict) -> str:
         hits_text = "No hits found"
 
     return (
-        f"<b>⚡💳 ㅤ#𝒮𝒽𝑜𝓅𝒾𝒾𝒾  💳⚡</b>\n"
-        f"<b>━━━━━━━━━━━━━━━━━</b>\n"
-        f"<b>⚡💠 𝐑𝐞𝐬𝐮𝐥𝐭𝐬</b>\n"
-        f"<blockquote>💳 Total: {results['total']} | ✅ {len(results['charged'])} | "
-        f"🔥 {len(results['approved'])} | ❌ {len(results['dead'])}</blockquote>\n"
-        f"<blockquote>🌐 𝐆𝐚𝐭𝐞𝐰𝐚𝐲: 🔥 {gateway}</blockquote>\n"
-        f"<blockquote>⏱️ Time: {format_elapsed(elapsed)}</blockquote>\n"
-        f"<b>━━━━━━━━━━━━━━━━━</b>\n"
-        f"<b>🎯💠 𝐇𝐢𝐭𝐬</b>\n"
-        f"<blockquote>{hits_text}</blockquote>\n"
-        f"<b>━━━━━━━━━━━━━━━━━</b>\n\n"
-        f'🤖 <b>Bot By: <a href="tg://user?id=1817159548">ZEUSｌ</a></b>'
-    )
-
+    f"<b>🐺 𝐀ᴇʀᴏ𝐗</b>\n"
+    f"<b>━━━━━━━━━━━━━━━━━</b>\n"
+    f"<b>⚡💠 𝐑ᴇ𝐬ᴜʟᴛ𝐬</b>\n"
+    f"<blockquote>💳 𝐓ᴏᴛᴀʟ: {results['total']} | ✅ {len(results['charged'])} | "
+    f"🔥 {len(results['approved'])} | ❌ {len(results['dead'])}</blockquote>\n"
+    f"<blockquote>🌐 𝐆ᴀᴛᴇᴡᴀʏ: 🔥 {gateway}</blockquote>\n"
+    f"<blockquote>⏱️ 𝐓ɪᴍᴇ: {format_elapsed(elapsed)}</blockquote>\n"
+    f"<b>━━━━━━━━━━━━━━━━━</b>\n"
+    f"<b>🎯💠 𝐇ɪᴛ𝐬</b>\n"
+    f"<blockquote>{hits_text}</blockquote>\n"
+    f"<b>━━━━━━━━━━━━━━━━━</b>\n\n"
+    f'😵‍💫 <b>𝐁ᴏᴛ 𝐁ʏ: <a href="tg://user?id=1817159548">𝐙ᴇᴜ𝐬</a></b>'
+)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # NOTIFICATION HELPERS
@@ -705,11 +708,12 @@ async def _do_single_check(event):
     card = cards[0]
     status_msg = await event.reply(
         premium_emoji(
-            f"<b>⚡💳 ㅤ#𝒮𝒽𝑜𝓅𝒾𝒾𝒾  💳⚡</b>\n"
-            f"<b>━━━━━━━━━━━━━━━━━</b>\n"
-            f"<b>⚡💠 𝐂𝐡𝐞𝐜𝐤𝐢𝐧𝐠...</b>\n"
-            f"<blockquote>💳 Card: <code>{card}</code></blockquote>\n"
-            f"<b>━━━━━━━━━━━━━━━━━</b>"
+        f"<b>🐺 𝐀ᴇʀᴏ𝐗</b>\n"
+        f"<b>━━━━━━━━━━━━━━━━━</b>\n"
+        f"<b>⚡💠 𝐂ʜᴇᴄᴋɪɴɢ...</b>\n"
+        f"<blockquote>💳 𝐂ᴀʀᴅ: <code>{card}</code></blockquote>\n"
+        f"<b>━━━━━━━━━━━━━━━━━</b>"
+    
         ),
         parse_mode="html",
     )
@@ -725,20 +729,23 @@ async def _do_single_check(event):
         }
         status_emoji, status_text = status_map.get(result["status"], ("❌", "𝐃𝐞𝐚𝐝"))
 
-        final_resp = (
-            f"<b>⚡💳 ㅤ#𝒮𝒽𝑜𝓅𝒾𝒾𝒾  💳⚡</b>\n"
-            f"<b>━━━━━━━━━━━━━━━━━</b>\n"
-            f"<b>⚡💠 𝐑𝐞𝐬𝐮𝐥𝐭𝐬</b>\n"
-            f"<blockquote>{status_emoji} Status: {status_text}</blockquote>\n"
-            f"<blockquote>💳 Card: <code>{result['card']}</code></blockquote>\n"
-            f"<blockquote>📝 Response: {result['message'][:150]}</blockquote>\n"
-            f"<blockquote>🌐 𝐆𝐚𝐭𝐞𝐰𝐚𝐲: 🔥 {result.get('gateway','Unknown')} | 💰 {result.get('price','-')}</blockquote>\n"
-            f"<b>━━━━━━━━━━━━━━━━━</b>\n"
-            f"<b>🎯💠 𝐁𝐈𝐍 𝐈𝐧𝐟𝐨</b>\n"
-            f"<pre>𝗕𝗜𝗡 𝗜𝗻𝗳𝗼: {brand} - {bin_type} - {level}\n"
-            f"𝗕𝗮𝗻𝗸: {bank}\n𝗖𝗼𝘂𝗻𝘁𝗿𝘆: {country} {flag}</pre>\n"
-            f"<b>━━━━━━━━━━━━━━━━━</b>\n\n"
-            f'🤖 <b>Bot By: <a href="tg://user?id=5248903529">ㅤㅤＫａｍａｌ</a></b>'
+    final_resp = (
+    f"<b>🐺 𝐀ᴇʀᴏ𝐗</b>\n"
+    f"<b>━━━━━━━━━━━━━━━━━</b>\n"
+    f"<b>⚡💠 𝐑ᴇ𝐬ᴜʟᴛ𝐬</b>\n"
+    f"<blockquote>{status_emoji} 𝐒ᴛᴀᴛᴜ𝐬: {status_text}</blockquote>\n"
+    f"<blockquote>💳 𝐂ᴀʀᴅ: <code>{result['card']}</code></blockquote>\n"
+    f"<blockquote>📝 𝐑ᴇ𝐬ᴘᴏɴ𝐬ᴇ: {result['message'][:150]}</blockquote>\n"
+    f"<blockquote>🌐 𝐆ᴀᴛᴇᴡᴀʏ: 🔥 {result.get('gateway','Unknown')} | 💰 {result.get('price','-')}</blockquote>\n"
+    f"<b>━━━━━━━━━━━━━━━━━</b>\n"
+    f"<b>🎯💠 𝐁ɪɴ 𝐈ɴғᴏ</b>\n"
+    f"<pre>"
+    f"𝐁ɪɴ : {brand} - {bin_type} - {level}\n"
+    f"𝐁ᴀɴᴋ : {bank}\n"
+    f"𝐂ᴏᴜɴᴛʀʏ : {country} {flag}"
+    f"</pre>\n"
+    f"<b>━━━━━━━━━━━━━━━━━</b>\n\n"
+)
         )
         await status_msg.edit(premium_emoji(final_resp), parse_mode="html")
 
