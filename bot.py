@@ -762,10 +762,10 @@ try:
             premium_emoji(f"❌ Error: {exc}"),
             parse_mode="html",
         )
-@bot.on(events.NewMessage(pattern=r"^/sh\s+"))
+
+@bot.on(events.NewMessage(pattern=r"^/sh\s+"))  # <-- AB INDENT SAHI HAI (0 spaces)
 async def cmd_sh(event):
     await _do_single_check(event)
-
 
 @bot.on(events.NewMessage(pattern=r"^/cc\s+"))
 async def cmd_cc(event):
