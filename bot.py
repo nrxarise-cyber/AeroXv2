@@ -342,22 +342,22 @@ def _build_hit_message(result: dict, bin_info: tuple) -> str:
     emoji       = "✅" if result["status"] == "Charged" else "🔥"
     status_text = "𝐂𝐡𝐚𝐫𝐠𝐞𝐝" if result["status"] == "Charged" else "𝐋𝐢𝐯𝐞"
     
-return (
-    f"<b>🐺 𝐀ᴇʀᴏ𝐗</b>\n"
-    f"<b>━━━━━━━━━━━━━━━━━</b>\n"
-    f"<b>⚡ 𝐇ɪᴛ 𝐅ᴏᴜɴᴅ!</b>\n"
-    f"<blockquote>{emoji} 𝐒ᴛᴀᴛᴜ𝐬: {status_text}</blockquote>\n"
-    f"<blockquote>💳 𝐂ᴀʀᴅ: <code>{result['card']}</code></blockquote>\n"
-    f"<blockquote>📝 𝐑ᴇ𝐬ᴘᴏɴ𝐬ᴇ: {result['message'][:150]}</blockquote>\n"
-    f"<blockquote>🌐 𝐆ᴀᴛᴇᴡᴀʏ: 🔥 {result.get('gateway','Unknown')} | 💰 {result.get('price','-')}</blockquote>\n"
-    f"<b>━━━━━━━━━━━━━━━━━</b>\n"
-    f"<b>⚡ 𝐁ɪɴ 𝐈ɴғᴏ</b>\n"
-    f"<pre>𝐁ɪɴ : {brand} - {bin_type} - {level}\n"
-    f"𝐁ᴀɴᴋ : {bank}\n"
-    f"𝐂ᴏᴜɴᴛʀʏ : {country} {flag}</pre>\n"
-    f"<b>━━━━━━━━━━━━━━━━━</b>\n\n"
-    f'😵‍💫 <b>𝐁ᴏᴛ 𝐁ʏ: <a href="tg://user?id=1817159548">𝐙ᴇᴜ𝐬</a></b>'
-)
+    return (
+        f"<b>🐺 𝐀ᴇʀᴏ𝐗</b>\n"
+        f"<b>━━━━━━━━━━━━━━━━━</b>\n"
+        f"<b>⚡ 𝐇ɪᴛ 𝐅ᴏᴜɴᴅ!</b>\n"
+        f"<blockquote>{emoji} 𝐒ᴛᴀᴛᴜ𝐬: {status_text}</blockquote>\n"
+        f"<blockquote>💳 𝐂ᴀʀᴅ: <code>{result['card']}</code></blockquote>\n"
+        f"<blockquote>📝 𝐑ᴇ𝐬ᴘᴏɴ𝐬ᴇ: {result['message'][:150]}</blockquote>\n"
+        f"<blockquote>🌐 𝐆ᴀᴛᴇᴡᴀʏ: 🔥 {result.get('gateway','Unknown')} | 💰 {result.get('price','-')}</blockquote>\n"
+        f"<b>━━━━━━━━━━━━━━━━━</b>\n"
+        f"<b>⚡ 𝐁ɪɴ 𝐈ɴғᴏ</b>\n"
+        f"<pre>𝐁ɪɴ : {brand} - {bin_type} - {level}\n"
+        f"𝐁ᴀɴᴋ : {bank}\n"
+        f"𝐂ᴏᴜɴᴛʀʏ : {country} {flag}</pre>\n"
+        f"<b>━━━━━━━━━━━━━━━━━</b>\n\n"
+        f'😵‍💫 <b>𝐁ᴏᴛ 𝐁ʏ: <a href="tg://user?id=1817159548">𝐙ᴇᴜ𝐬</a></b>'
+    )
 
 
 def _build_progress_message(results: dict, checked: int) -> str:
