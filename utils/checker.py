@@ -216,44 +216,129 @@ async def test_site(site: str, proxy: str) -> dict:
     Returns ``{'site': site, 'status': 'alive' | 'dead'}``.
     """
     try:
-        params = {"cc": _TEST_CARD, "url": site, "proxy": proxy}
+        params = {"cc": _TEST_CARD, "site": site, "proxy": proxy}
         timeout = aiohttp.ClientTimeout(total=60)
 
         async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.get(CHECKER_API_URL, params=params) as resp:
                 raw = await resp.json(content_type=None)
 
-        response_msg = raw.get("Response", "").lower()
+        if "error" in raw:
+            return {"site": site, "status": "dead", "msg": raw.get("error")}
+
+        response_msg = raw.get("Response", "")
 
         if is_dead_site_error(response_msg):
-            return {"site": site, "status": "dead"}
+            return {"site": site, "status": "dead", "msg": response_msg}
 
-        return {"site": site, "status": "alive"}
+        price = raw.get("Price", "N/A")
+        return {"site": site, "status": "alive", "msg": response_msg, "price": price}
 
-    except Exception:
-        return {"site": site, "status": "dead"}
+    except Exception as e:
+        return {"site": site, "status": "dead", "msg": str(e)}
 
 
-async def test_proxy(proxy: str) -> dict:
-    """Test whether a proxy is alive by running a dummy request through the API.
+import time
 
-    Returns ``{'proxy': proxy, 'status': 'alive' | 'dead'}``.
-    """
+def get_proxy_url(proxy_str: str) -> str:
+    proxy_str = proxy_str.strip()
     try:
-        params = {"cc": _TEST_CARD, "url": _TEST_SITE, "proxy": proxy}
-        timeout = aiohttp.ClientTimeout(total=60)
-
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            async with session.get(CHECKER_API_URL, params=params) as resp:
-                raw = await resp.json(content_type=None)
-
-        response_msg = raw.get("Response", "").lower()
-
-        _dead_proxy_phrases = ("proxy dead", "invalid proxy format", "no proxy")
-        if any(phrase in response_msg for phrase in _dead_proxy_phrases):
-            return {"proxy": proxy, "status": "dead"}
-
-        return {"proxy": proxy, "status": "alive"}
-
+        if "@" in proxy_str:
+            auth, hostport = proxy_str.rsplit("@", 1)
+            user, password = auth.split(":", 1)
+            host, port = hostport.rsplit(":", 1)
+            return f"http://{user}:{password}@{host}:{port}"
+        else:
+            parts = proxy_str.split(":")
+            if len(parts) == 4:
+                host, port, user, password = parts
+                return f"http://{user}:{password}@{host}:{port}"
+            elif len(parts) == 2:
+                return f"http://{parts[0]}:{parts[1]}"
     except Exception:
-        return {"proxy": proxy, "status": "dead"}
+        pass
+    return None
+
+async def test_proxy(proxy_str: str, timeout: int = 10) -> dict:
+    """Full proxy test — IP, country, speed, type, fraud score, and Shopify connectivity"""
+    result = {
+        "proxy": proxy_str, "status": "dead", "alive": False, "ms": None, "ip": None,
+        "country": None, "country_code": None, "isp": None, "type": None,
+        "shopify": False, "shopify_ms": None,
+        "fraud_score": None, "is_proxy": None, "is_vpn": None,
+        "error": None,
+    }
+    proxy_url = get_proxy_url(proxy_str)
+    if not proxy_url:
+        result["error"] = "Invalid format"
+        return result
+    
+    # Detect proxy type from URL
+    if proxy_url.startswith("socks5"):
+        result["type"] = "SOCKS5"
+    elif proxy_url.startswith("socks4"):
+        result["type"] = "SOCKS4"
+    else:
+        result["type"] = "HTTP"
+    
+    try:
+        # Step 1: Basic connectivity + IP info
+        t0 = time.perf_counter()
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=timeout)) as s:
+            async with s.get("http://ip-api.com/json?fields=query,country,countryCode,isp,org,as,hosting", proxy=proxy_url) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    result["alive"] = True
+                    result["status"] = "alive"
+                    result["ms"] = round((time.perf_counter() - t0) * 1000)
+                    result["ip"] = data.get("query", "?")
+                    result["country"] = data.get("country", "?")
+                    result["country_code"] = data.get("countryCode", "?")
+                    result["isp"] = data.get("isp") or data.get("org") or "?"
+                    if data.get("hosting"):
+                        result["type"] += " (DC)"
+                    else:
+                        result["type"] += " (Resi)"
+                else:
+                    result["error"] = f"HTTP {resp.status}"
+                    return result
+    except asyncio.TimeoutError:
+        result["error"] = "Timeout"
+        return result
+    except Exception as e:
+        result["error"] = str(e)[:40]
+        return result
+    
+    # Step 2: Fraud score check via proxycheck.io (free, no key)
+    try:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=6)) as s:
+            check_url = f"http://proxycheck.io/v2/{result['ip']}?vpn=1&risk=1&asn=1"
+            async with s.get(check_url) as resp:
+                if resp.status == 200:
+                    fdata = await resp.json()
+                    ip_data = fdata.get(result["ip"], {})
+                    result["fraud_score"] = ip_data.get("risk", None)
+                    result["is_proxy"] = ip_data.get("proxy", "?")
+                    result["is_vpn"] = ip_data.get("vpn", "?")
+    except Exception:
+        pass  # Non-critical, continue without fraud score
+    
+    # Step 3: Shopify connectivity test
+    try:
+        t1 = time.perf_counter()
+        async with aiohttp.ClientSession(
+            timeout=aiohttp.ClientTimeout(total=8),
+            connector=aiohttp.TCPConnector(ssl=False)
+        ) as s:
+            async with s.get(
+                "https://checkout.shopify.com",
+                proxy=proxy_url
+            ) as resp:
+                result["shopify_ms"] = round((time.perf_counter() - t1) * 1000)
+                if resp.status in (200, 301, 302, 403, 404):
+                    result["shopify"] = True
+    except Exception:
+        result["shopify"] = False
+        result["shopify_ms"] = None
+    
+    return result

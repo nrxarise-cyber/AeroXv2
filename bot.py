@@ -6,7 +6,7 @@ from datetime import datetime
 import aiofiles
 from telethon import Button, TelegramClient, events
 
-from config import API_ID, API_HASH, BOT_TOKEN, OWNER_ID
+from config import API_ID, API_HASH, BOT_TOKEN, OWNER_ID, ADMIN_IDS
 from database.logs import get_recent_sessions, get_user_stats, save_log
 from database.sites import (
     add_site,
@@ -27,7 +27,13 @@ from database.users import (
     remove_credits,
     extend_plan,
     remove_proxy,
+    remove_single_proxy,
     set_proxy,
+    consume_credit,
+    update_stats,
+    add_proxies_bulk,
+    get_proxy_count,
+    get_all_user_proxies,
 )
 
 from utils.binlookup import get_bin_info
@@ -74,13 +80,9 @@ def _kb_shopify() -> list:
 
 def _kb_proxy() -> list:
     return [
-        [Button.inline("➕  𝘚𝘦𝘵 Proxy", b"proxy:set"),
-         Button.inline("👁  𝘝𝘪𝘦𝘸 𝘗𝘳𝘰𝘹𝘺", b"proxy:view")],
-
-        [Button.inline("🗑  𝘙𝘦𝘮𝘰𝘷𝘦 𝘗𝘳𝘰𝘹𝘺", b"proxy:remove"),
-         Button.inline("🔄  𝘊𝘩𝘦𝘤𝘬 𝘗𝘳𝘰𝘹𝘺", b"proxy:check")],
-
-        [Button.inline("🔙  𝘉𝘢𝘤𝘬", b"menu:main")],
+        [Button.inline("➕ Add Proxy", b"proxy_add"), Button.inline("🔄 Test Proxy", b"proxy_test")],
+        [Button.inline("📋 View Proxies", b"proxy_view"), Button.inline("🗑️ Remove All", b"proxy_remove")],
+        [Button.inline("🔙 Back", b"menu:main")],
     ]
 
 
@@ -149,11 +151,9 @@ def _txt_shopify() -> str:
 
 
 async def _txt_proxy(user_id: int) -> str:
-    proxy = await get_proxy(user_id)
-    if proxy:
-        parts = proxy.split(":")
-        display = f"<code>{parts[0]}:{parts[1]}:***:***</code>" if len(parts) >= 2 else f"<code>{proxy}</code>"
-        status = f"✅ <b>𝑷𝒓𝒐𝒙𝒚 𝑹𝒆𝒂𝒅𝒚</b>\n{display}"
+    count = await get_proxy_count(user_id)
+    if count > 0:
+        status = f"✅ <b>\ud835\udc77\ud835\udc93\ud835\udc90\ud835\udc99\ud835\udc9a \ud835\udc79\ud835\udc86\ud835\udc82\ud835\udc85\ud835\udc9a</b>\n\U0001f4ca {count} proxies loaded"
     else:
         status = "❌ <b>𝑵𝒐 𝑷𝒓𝒐𝒙𝒚 𝑺𝒆𝒕</b>"
 
@@ -241,36 +241,31 @@ async def _txt_analytics(user_id: int) -> str:
 
 def _txt_help() -> str:
     return (
-        "<b>🐺 𝐀ᴇʀᴏ𝐗</b>\n"
-        "<b>━━━━━━━━━━━━━━━━━</b>\n"
-        "<b>❓ 𝐇ᴇ𝐋ᴘ & 𝐂ᴏᴍᴍᴀɴᴅ𝐬</b>\n\n"
-        "<blockquote>𝑸𝒖𝒊𝒄𝒌 𝐂ᴏᴍᴍᴀɴᴅ 𝐑ᴇғᴇʀᴇɴᴄᴇ.</blockquote>\n\n"
-        "<b>💳 𝐂ʜᴇ𝐂ᴋᴇʀ</b>\n"
+        "<b>\ud83d\udc3a \ud835\udc00\u1d07\u0280\u1d0f\ud835\udc17</b>\n"
+        "<b>\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</b>\n"
+        "<b>\u2753 \ud835\udc07\u1d07\ud835\udc0b\u1d18 & \ud835\udc02\u1d0f\u1d0d\u1d0d\u1d00\u0274\u1d05\ud835\udc2c</b>\n\n"
+        "<blockquote>Quick Command Reference.</blockquote>\n\n"
+        "<b>\ud83d\udcb3 Checker</b>\n"
         "<blockquote>"
-        "/sh <code>card|mm|yy|cvv</code> — 𝐒ɪɴɢ𝐋ᴇ 𝐂ʜᴇ𝐂ᴋ\n"
-        "/msh — 𝐌ᴜʟ𝐓ɪ 𝐂ʜᴇ𝐂ᴋ\n"
-        "/shtxt — 𝐁ᴜʟ𝐊 𝐂ʜᴇ𝐂ᴋ"
+        "/sh <code>card|mm|yy|cvv</code> \u2014 Single Check\n"
+        "/msh \u2014 Multi Check\n"
+        "/shtxt \u2014 Bulk Check"
         "</blockquote>\n\n"
-        "<b>📡 𝐏ʀᴏxʏ</b>\n"
+        "<b>📡 Proxy</b>\n"
         "<blockquote>"
-        "/addproxy <code>ip:port:user:pass</code> — 𝐒ᴇᴛ 𝐏ʀᴏxʏ\n"
-        "/getproxy — 𝐕ɪᴇ𝐖 𝐏ʀᴏxʏ\n"
-        "/rmproxy — 𝐑ᴇᴍᴏᴠᴇ 𝐏ʀᴏxʏ\n"
-        "/chkproxy — 𝐓ᴇ𝐬ᴛ 𝐏ʀᴏxʏ"
+        "/proxy \u2014 Open Proxy Menu (Inline Buttons)\n"
+        "/addpx <code>ip:port:user:pass</code> \u2014 Add Proxy\n"
+        "  \u21b3 Paste multi-line or reply to .txt for bulk\n"
+        "/viewpx \u2014 View Proxies (.txt)\n"
+        "/rmpx \u2014 Remove Proxies\n"
+        "/testpx \u2014 Test Proxy"
         "</blockquote>\n\n"
-        "<b>🌐 𝐒ɪᴛᴇ𝐬 (𝐀ᴅᴍɪɴ)</b>\n"
-        "<blockquote>"
-        "/addsite <code>url</code> — 𝐀ᴅᴅ 𝐒ɪᴛᴇ\n"
-        "/rm <code>url</code> — 𝐑ᴇᴍᴏᴠᴇ 𝐒ɪᴛᴇ\n"
-        "/site — 𝐂ʜᴇ𝐂ᴋ 𝐒ɪᴛᴇ𝐬"
-        "</blockquote>\n\n"
-        "<b>📌 𝐂ᴀʀ𝐃 𝐅ᴏʀᴍᴀᴛ</b>\n"
+
+        "<b>\ud83d\udccc Card Format</b>\n"
         "<blockquote><code>card|mm|yyyy|cvv</code></blockquote>\n"
-        "<b>━━━━━━━━━━━━━━━━━</b>\n"
-        '😵‍💫 <b>𝐁ᴏᴛ 𝐁ʏ ~ <a href="tg://user?id=1817159548">𝐙ᴇ𝐮𝐬</a></b>'
+        "<b>\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</b>\n"
+        '\ud83d\ude35\u200d\ud83d\udcab <b>Bot By ~ <a href="tg://user?id=1817159548">Zeus</a></b>'
     )
-# ═══════════════════════════════════════════════════════════════════════════════
-# SHARED GUARDS
 # ═══════════════════════════════════════════════════════════════════════════════
 
 async def _ensure_and_check_premium(event) -> bool:
@@ -317,7 +312,7 @@ async def _require_sites_and_proxy(event, user_id: int):
     return sites, proxy
 
 def is_owner(user_id: int) -> bool:
-    return user_id == OWNER_ID
+    return user_id == OWNER_ID or user_id in ADMIN_IDS
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # RESULT MESSAGE BUILDERS
@@ -433,7 +428,7 @@ async def _send_final_results(user_id: int, results: dict) -> None:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename  = f"shopiii_{user_id}_{timestamp}.txt"
 
-    async with aiofiles.open(filename, "w") as f:
+    async with aiofiles.open(filename, "w", encoding="utf-8") as f:
         await f.write("=" * 70 + "\n")
         await f.write("⚡💳 CC CHECKER RESULTS 💳⚡\n")
         await f.write("Format: CC | Gateway | Price | Message | Site\n")
@@ -567,67 +562,6 @@ async def cb_noop(event):
 # CALLBACK QUERY — PROXY INLINE ACTIONS
 # ═══════════════════════════════════════════════════════════════════════════════
 
-@bot.on(events.CallbackQuery(pattern=b"proxy:set"))
-async def cb_proxy_set(event):
-    await event.answer()
-    await bot.send_message(
-        event.sender_id,
-        premium_emoji(
-            "📡 <b>Set Your Proxy</b>\n\n"
-            "Send your proxy using the command:\n"
-            "<code>/addproxy ip:port:user:pass</code>"
-        ),
-        parse_mode="html",
-    )
-
-
-@bot.on(events.CallbackQuery(pattern=b"proxy:view"))
-async def cb_proxy_view(event):
-    proxy = await get_proxy(event.sender_id)
-    if proxy:
-        parts = proxy.split(":")
-        display = f"<code>{parts[0]}:{parts[1]}:***:***</code>" if len(parts) >= 2 else f"<code>{proxy}</code>"
-        msg = f"📡 <b>Your Proxy:</b>\n\n{display}"
-    else:
-        msg = "❌ <b>No proxy set.</b>\n\nUse <code>/addproxy ip:port:user:pass</code>"
-    await event.answer()
-    await bot.send_message(event.sender_id, premium_emoji(msg), parse_mode="html")
-
-
-@bot.on(events.CallbackQuery(pattern=b"proxy:remove"))
-async def cb_proxy_remove(event):
-    proxy = await get_proxy(event.sender_id)
-    if not proxy:
-        await event.answer("❌ No proxy set!", alert=False)
-        return
-
-    await remove_proxy(event.sender_id)
-    text = await _txt_proxy(event.sender_id)
-    await event.edit(
-        premium_emoji(text),
-        buttons=_kb_proxy(),
-        parse_mode="html",
-    )
-    await event.answer("✅ Proxy removed!")
-
-
-@bot.on(events.CallbackQuery(pattern=b"proxy:check"))
-async def cb_proxy_check(event):
-    proxy = await get_proxy(event.sender_id)
-    if not proxy:
-        await event.answer("❌ No proxy set!", alert=True)
-        return
-
-    await event.answer("🔄 Testing your proxy…")
-    result = await test_proxy(proxy)
-
-    if result["status"] == "alive":
-        msg = f"✅ <b>Proxy is ALIVE!</b>\n\n<code>{proxy}</code>"
-    else:
-        msg = f"❌ <b>Proxy is DEAD!</b>\n\n<code>{proxy}</code>"
-
-    await bot.send_message(event.sender_id, premium_emoji(msg), parse_mode="html")
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CHECKER CALLBACKS (Pause / Resume / Stop)
@@ -638,7 +572,7 @@ async def cb_pause(event):
     session_key = f"{event.sender_id}_{event.message_id}"
     if session_key in active_sessions:
         active_sessions[session_key]["paused"] = True
-        await event.answer(premium_emoji("⏸️ Paused"))
+        await event.answer("⏸️ Paused")
 
 
 @bot.on(events.CallbackQuery(pattern=b"resume"))
@@ -646,7 +580,7 @@ async def cb_resume(event):
     session_key = f"{event.sender_id}_{event.message_id}"
     if session_key in active_sessions:
         active_sessions[session_key]["paused"] = False
-        await event.answer(premium_emoji("▶️ Resumed"))
+        await event.answer("▶️ Resumed")
 
 
 @bot.on(events.CallbackQuery(pattern=b"stop"))
@@ -654,7 +588,7 @@ async def cb_stop(event):
     session_key = f"{event.sender_id}_{event.message_id}"
     if session_key in active_sessions:
         del active_sessions[session_key]
-        await event.answer(premium_emoji("🛑 Stopped"))
+        await event.answer("🛑 Stopped")
         await event.edit(
             premium_emoji("😡 <b>Checking stopped by user.</b>"),
             parse_mode="html",
@@ -691,6 +625,14 @@ async def _do_single_check(event):
         )
         return
 
+    # Consume one credit before checking
+    if not await consume_credit(user_id):
+        await event.reply(
+            premium_emoji("\u274c <b>No credits remaining.</b>\n\nPlease contact admin to refill."),
+            parse_mode="html",
+        )
+        return
+
     card = cards[0]
     status_msg = await event.reply(
         premium_emoji(
@@ -704,6 +646,14 @@ async def _do_single_check(event):
     )
     try:
         result = await check_card_with_retry(card, sites, proxy, max_retries=3)
+
+        # Track stats based on result
+        if result["status"] == "Charged":
+            await update_stats(user_id, checks=0, charged=1)
+        elif result["status"] == "Approved":
+            await update_stats(user_id, checks=0, approved=1)
+        else:
+            await update_stats(user_id, checks=0, dead=1)
         bin_info = await get_bin_info(card.split("|")[0])
         brand, bin_type, level, bank, country, flag = bin_info
 
@@ -833,6 +783,11 @@ async def _run_bulk_check(event, content: str, user_id: int):
                 except asyncio.QueueEmpty:
                     break
 
+                # Consume one credit per card
+                if not await consume_credit(user_id):
+                    # No credits left - stop worker
+                    break
+
                 cur_sites = await get_all_sites()
                 cur_proxy = await get_proxy(user_id)
                 if not cur_sites or not cur_proxy: break
@@ -842,12 +797,15 @@ async def _run_bulk_check(event, content: str, user_id: int):
 
                 if res["status"] == "Charged":
                     all_results["charged"].append(res)
+                    await update_stats(user_id, checks=0, charged=1)
                     await _send_realtime_hit(user_id, res)
                 elif res["status"] == "Approved":
                     all_results["approved"].append(res)
+                    await update_stats(user_id, checks=0, approved=1)
                     await _send_realtime_hit(user_id, res)
                 else:
                     all_results["dead"].append(res)
+                    await update_stats(user_id, checks=0, dead=1)
 
                 queue.task_done()
                 now = time.time()
@@ -910,12 +868,12 @@ async def _handle_txt_check(event):
     await _run_bulk_check(event, content, user_id)
 
 
-@bot.on(events.NewMessage(pattern="/shtxt"))
+@bot.on(events.NewMessage(pattern=r"^/shtxt$"))
 async def cmd_shtxt(event):
     await _handle_txt_check(event)
 
 
-@bot.on(events.NewMessage(pattern="/chk"))
+@bot.on(events.NewMessage(pattern=r"^/chk$"))
 async def cmd_chk(event):
     await _handle_txt_check(event)
 
@@ -924,53 +882,275 @@ async def cmd_chk(event):
 # PROXY COMMANDS
 # ═══════════════════════════════════════════════════════════════════════════════
 
-@bot.on(events.NewMessage(pattern=r"^/addproxy"))
-async def cmd_addproxy(event):
-    if not await _ensure_and_check_premium(event): return
+
+def _parse_proxies(text: str) -> list:
+    """Parse and validate proxy strings from text. Returns list of valid proxy strings."""
+    proxies = []
+    for line in text.strip().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split(":")
+        if len(parts) >= 2 and all(p.strip() for p in parts[:2]):
+            proxies.append(line)
+    return proxies
+
+
+@bot.on(events.NewMessage(pattern=r"^/addpx(?:\s+(.*))?$"))
+async def cmd_addpx(event):
+    # Check if replying to a .txt file for bulk proxy import
+    if event.reply_to_msg_id:
+        reply_msg = await event.get_reply_message()
+        if reply_msg.file and reply_msg.file.name and reply_msg.file.name.endswith(".txt"):
+            status_msg = await event.reply(premium_emoji("\u23f3 Processing proxy file..."), parse_mode="html")
+            file_path = await reply_msg.download_media()
+            async with aiofiles.open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                content = await f.read()
+            try: os.remove(file_path)
+            except Exception: pass
+
+            proxies = _parse_proxies(content)
+            if not proxies:
+                await status_msg.edit(premium_emoji("\u274c No valid proxies found in file."), parse_mode="html")
+                return
+
+            await add_proxies_bulk(event.sender_id, proxies)
+            total = await get_proxy_count(event.sender_id)
+            await status_msg.edit(
+                premium_emoji(f"\u2705 <b>{len(proxies)} proxies added from file!</b>\n\n\U0001f4ca Total proxies: {total}"),
+                parse_mode="html",
+            )
+            return
+
+    # Text input (single or multi-line)
     parts = event.message.text.strip().split(None, 1)
     if len(parts) < 2 or not parts[1].strip():
-        await event.reply(premium_emoji("❌ Usage: <code>/addproxy ip:port:user:pass</code>"), parse_mode="html")
+        await event.reply(
+            premium_emoji(
+                "\u274c <b>Usage:</b>\n\n"
+                "<b>Single:</b> <code>/addpx ip:port:user:pass</code>\n\n"
+                "<b>Multi:</b>\n<code>/addpx\nproxy1\nproxy2\n...</code>\n\n"
+                "<b>File:</b> Reply to a <code>.txt</code> file with <code>/addpx</code>"
+            ),
+            parse_mode="html",
+        )
         return
 
-    proxy = parts[1].strip().splitlines()[0].strip()
-    await set_proxy(event.sender_id, proxy)
-    await event.reply(premium_emoji(f"✅ <b>Proxy Set!</b>\n\n<code>{proxy}</code>"), parse_mode="html")
-
-
-@bot.on(events.NewMessage(pattern=r"^/getproxy$"))
-async def cmd_getproxy(event):
-    if not await _ensure_and_check_premium(event): return
-    proxy = await get_proxy(event.sender_id)
-    if not proxy:
-        await event.reply(premium_emoji("❌ No proxy set.\n\nUse <code>/addproxy ip:port:user:pass</code>"), parse_mode="html")
+    body = parts[1].strip()
+    proxies = _parse_proxies(body)
+    if not proxies:
+        await event.reply(
+            premium_emoji("\u274c <b>No valid proxies found.</b>\n\nFormat: <code>ip:port:user:pass</code> or <code>ip:port</code>"),
+            parse_mode="html",
+        )
         return
-    await event.reply(premium_emoji(f"📋 <b>Your Proxy:</b>\n\n<code>{proxy}</code>"), parse_mode="html")
+
+    if len(proxies) == 1:
+        await set_proxy(event.sender_id, proxies[0])
+        await event.reply(premium_emoji(f"\u2705 <b>Proxy Added!</b>\n\n<code>{proxies[0]}</code>"), parse_mode="html")
+    else:
+        await add_proxies_bulk(event.sender_id, proxies)
+        total = await get_proxy_count(event.sender_id)
+        await event.reply(
+            premium_emoji(f"\u2705 <b>{len(proxies)} proxies added!</b>\n\n\U0001f4ca Total proxies: {total}"),
+            parse_mode="html",
+        )
 
 
-@bot.on(events.NewMessage(pattern=r"^/rmproxy$"))
-async def cmd_rmproxy(event):
-    if not await _ensure_and_check_premium(event): return
-    if not await get_proxy(event.sender_id):
-        await event.reply(premium_emoji("❌ You have no proxy set."), parse_mode="html")
+@bot.on(events.NewMessage(pattern=r"^/viewpx$"))
+async def cmd_viewpx(event):
+    count = await get_proxy_count(event.sender_id)
+    if count == 0:
+        await event.reply(premium_emoji("\u274c No proxies set.\n\nUse <code>/addpx ip:port:user:pass</code>"), parse_mode="html")
+        return
+    proxies = await get_all_user_proxies(event.sender_id)
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"proxies_{event.sender_id}_{timestamp}.txt"
+    async with aiofiles.open(filename, "w", encoding="utf-8") as f:
+        await f.write("\n".join(proxies))
+        
+    await event.reply(
+        premium_emoji(f"\U0001f4cb <b>Your Proxies ({count}):</b>"), 
+        file=filename,
+        parse_mode="html"
+    )
+    try:
+        os.remove(filename)
+    except Exception:
+        pass
+
+@bot.on(events.NewMessage(pattern=r"^/rmpx(?:\s+(.*))?$"))
+async def cmd_rmpx(event):
+    arg = event.pattern_match.group(1)
+    
+    count = await get_proxy_count(event.sender_id)
+    if count == 0:
+        await event.reply(premium_emoji("❌ You have no proxies set."), parse_mode="html")
+        return
+        
+    proxies = await get_all_user_proxies(event.sender_id)
+    
+    if not arg:
+        # Show list with serial numbers
+        lines = []
+        for i, p in enumerate(proxies[:100], start=1):
+            lines.append(f"{i}. <code>{p}</code>")
+        msg = "\n".join(lines)
+        if count > 100:
+            msg += f"\n\n... and {count - 100} more."
+        
+        await event.reply(
+            premium_emoji(f"🗑️ <b>Proxy Removal System</b>\n\nTo remove a proxy, use <code>/rmpx [number]</code>\nTo remove all, use <code>/rmpx all</code>\n\n<b>Your Proxies:</b>\n\n{msg}"),
+            parse_mode="html"
+        )
+        return
+        
+    arg = arg.strip().lower()
+    if arg == "all":
+        await remove_proxy(event.sender_id)
+        await event.reply(premium_emoji(f"✅ <b>{count} proxies removed!</b>"), parse_mode="html")
+        return
+        
+    try:
+        idx = int(arg) - 1
+        if idx < 0 or idx >= count:
+            await event.reply(premium_emoji("❌ Invalid proxy number."), parse_mode="html")
+            return
+            
+        proxy_to_remove = proxies[idx]
+        await remove_single_proxy(event.sender_id, proxy_to_remove)
+        await event.reply(premium_emoji(f"✅ <b>Proxy removed!</b>\n\n<code>{proxy_to_remove}</code>"), parse_mode="html")
+    except ValueError:
+        await event.reply(premium_emoji("❌ Please provide a valid proxy number or 'all'."), parse_mode="html")
+
+
+@bot.on(events.NewMessage(pattern=r"^/testpx$"))
+async def cmd_testpx(event):
+    proxies = await get_all_user_proxies(event.sender_id)
+    if not proxies:
+        await event.reply(premium_emoji("❌ No proxies set.\n\nUse <code>/addpx ip:port:user:pass</code> first."), parse_mode="html")
+        return
+
+    status_msg = await event.reply(
+        premium_emoji(
+            f"<b>🐺 𝐀ᴇʀᴏ𝐗</b>\n"
+            f"<b>━━━━━━━━━━━━━━━━━</b>\n"
+            f"🔄 <b>Testing Proxies...</b>\n\n"
+            f"<blockquote>"
+            f"Total: {len(proxies)}\n"
+            f"Checking IP, Fraud, and Shopify..."
+            f"</blockquote>\n"
+            f"<b>━━━━━━━━━━━━━━━━━</b>"
+        ), 
+        parse_mode="html"
+    )
+    
+    alive, dead = [], []
+    alive_blocks = []
+    
+    for i in range(0, len(proxies), 10):
+        batch = proxies[i : i + 10]
+        tasks = [test_proxy(p) for p in batch]
+        results = await asyncio.gather(*tasks)
+        
+        for p, res in zip(batch, results):
+            if res.get("alive"):
+                alive.append(p)
+                if len(alive_blocks) < 10:
+                    shopify_s = "✅ YES" if res.get("shopify") else "❌ NO"
+                    fs = res.get("fraud_score")
+                    if fs is not None:
+                        if fs <= 20: fs_str = f"✅ {fs}/100 (Clean)"
+                        elif fs <= 50: fs_str = f"⚠️ {fs}/100 (Medium)"
+                        else: fs_str = f"❌ {fs}/100 (Risky)"
+                    else: 
+                        fs_str = "─"
+                        
+                    ip_display = res.get('ip', '?')
+                    cc_display = res.get('country_code') or res.get('country') or '?'
+                    shop_ms = res.get('shopify_ms') or res.get('ms')
+                    
+                    alive_blocks.append(
+                        f"<blockquote>"
+                        f"✅ <code>{p}</code>\n"
+                        f"🌍 <b>IP:</b> <code>{ip_display}</code> | <code>{cc_display}</code>\n"
+                        f"🛡️ <b>Fraud:</b> {fs_str}\n"
+                        f"🛍️ <b>Shopify:</b> {shopify_s} ({shop_ms}ms)"
+                        f"</blockquote>"
+                    )
+            else:
+                dead.append(p)
+                await remove_single_proxy(event.sender_id, p)
+        
+        await status_msg.edit(
+            premium_emoji(
+                f"<b>🐺 𝐀ᴇʀᴏ𝐗</b>\n"
+                f"<b>━━━━━━━━━━━━━━━━━</b>\n"
+                f"🔄 <b>Testing Proxies...</b>\n\n"
+                f"<blockquote>"
+                f"<b>Checked:</b> {len(alive)+len(dead)}/{len(proxies)}\n"
+                f"<b>Alive:</b> {len(alive)}\n"
+                f"<b>Dead (Removed):</b> {len(dead)}"
+                f"</blockquote>\n"
+                f"<b>━━━━━━━━━━━━━━━━━</b>"
+            ),
+            parse_mode="html"
+        )
+        
+    final_text = (
+        f"<b>🐺 𝐀ᴇʀᴏ𝐗</b>\n"
+        f"<b>━━━━━━━━━━━━━━━━━</b>\n"
+        f"✅ <b>Proxy Check Complete!</b>\n\n"
+        f"<blockquote>"
+        f"<b>Total Checked:</b> {len(proxies)}\n"
+        f"<b>Alive:</b> {len(alive)}\n"
+        f"<b>Dead (Removed):</b> {len(dead)}"
+        f"</blockquote>\n"
+        f"<b>━━━━━━━━━━━━━━━━━</b>\n"
+    )
+    if alive_blocks:
+        final_text += "\n<b>🌟 Top Alive Proxies:</b>\n" + "\n".join(alive_blocks)
+        if len(alive) > 10:
+            final_text += f"\n\n<i>... and {len(alive) - 10} more</i>\n"
+            
+    final_text += "\n🐻 <b>𝑷𝒐𝒘𝒆𝒓𝒆𝒅 𝒃𝒚 𝑨𝒆𝒓𝒐𝑿</b>"
+            
+    await status_msg.edit(premium_emoji(final_text), parse_mode="html")
+
+@bot.on(events.NewMessage(pattern=r"^/proxy$"))
+async def cmd_proxy_menu(event):
+    txt = await _txt_proxy(event.sender_id)
+    await event.respond(txt, buttons=_kb_proxy(), parse_mode="html")
+
+@bot.on(events.CallbackQuery(pattern=b"^proxy_add$"))
+async def cb_proxy_add(event):
+    await event.answer("To add proxies, send:\n/addpx ip:port:user:pass\n(or reply to a .txt file)", alert=True)
+
+@bot.on(events.CallbackQuery(pattern=b"^proxy_test$"))
+async def cb_proxy_test(event):
+    await event.answer("Starting proxy test...")
+    await cmd_testpx(event)
+
+@bot.on(events.CallbackQuery(pattern=b"^proxy_view$"))
+async def cb_proxy_view(event):
+    await event.answer("Generating proxy file...")
+    await cmd_viewpx(event)
+
+@bot.on(events.CallbackQuery(pattern=b"^proxy_remove$"))
+async def cb_proxy_remove(event):
+    count = await get_proxy_count(event.sender_id)
+    if count == 0:
+        await event.answer("You don't have any proxies to remove.", alert=True)
         return
     await remove_proxy(event.sender_id)
-    await event.reply(premium_emoji("✅ <b>Proxy Removed!</b>"), parse_mode="html")
+    await event.answer(f"✅ {count} proxies removed!", alert=True)
+    txt = await _txt_proxy(event.sender_id)
+    await event.edit(txt, buttons=_kb_proxy(), parse_mode="html")
 
-
-@bot.on(events.NewMessage(pattern=r"^/chkproxy$"))
-async def cmd_chkproxy(event):
-    if not await _ensure_and_check_premium(event): return
-    proxy = await get_proxy(event.sender_id)
-    if not proxy:
-        await event.reply(premium_emoji("❌ No proxy set.\n\nUse <code>/addproxy ip:port:user:pass</code> first."), parse_mode="html")
-        return
-
-    status_msg = await event.reply(premium_emoji(f"🔄 Testing proxy: <code>{proxy}</code>..."), parse_mode="html")
-    result = await test_proxy(proxy)
-    if result["status"] == "alive":
-        await status_msg.edit(premium_emoji(f"✅ <b>Proxy is ALIVE!</b>\n\n<code>{proxy}</code>"), parse_mode="html")
-    else:
-        await status_msg.edit(premium_emoji(f"❌ <b>Proxy is DEAD!</b>\n\n<code>{proxy}</code>"), parse_mode="html")
+@bot.on(events.NewMessage(pattern=r"^/help$"))
+async def cmd_help(event):
+    await event.respond(premium_emoji(_txt_help()), parse_mode="html")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -979,29 +1159,234 @@ async def cmd_chkproxy(event):
 
 @bot.on(events.NewMessage(pattern=r"^/addsite\s+"))
 async def cmd_addsite(event):
-    if not await _ensure_and_check_premium(event): return
+    if not is_owner(event.sender_id):
+        await event.reply(premium_emoji("\u274c <b>Owner Only.</b> You don't have permission."), parse_mode="html")
+        return
     url = event.message.text.split(" ", 1)[1].strip()
     if not url:
-        await event.reply(premium_emoji("❌ Usage: <code>/addsite https://example.com</code>"), parse_mode="html")
+        await event.reply(premium_emoji("\u274c Usage: <code>/addsite https://example.com</code>"), parse_mode="html")
         return
-    await add_site(url)
+
+    proxy = await get_proxy(event.sender_id)
+    if not proxy:
+        await event.reply(premium_emoji("\u274c <b>No proxy set.</b> Use <code>/addpx ip:port:user:pass</code> first."), parse_mode="html")
+        return
+
+    status_msg = await event.reply(premium_emoji(f"🔄 <b>Testing Site:</b> <code>{url}</code>"), parse_mode="html")
+    
+    from utils.checker import test_site
+    result = await test_site(url, proxy)
+    
+    if result["status"] == "alive":
+        await add_site(url)
+        count = await site_count()
+        await status_msg.edit(premium_emoji(f"\u2705 <b>Site Added!</b>\n\n<code>{url}</code>\n\n\U0001f4ca Total alive sites: {count}"), parse_mode="html")
+    else:
+        err = result.get("error", "Dead/Offline")
+        await status_msg.edit(premium_emoji(f"\u274c <b>Site Rejected (Dead)</b>\n\n<code>{url}</code>\n<b>Reason:</b> {err}"), parse_mode="html")
+
+
+@bot.on(events.NewMessage(pattern=r"^/addsites$"))
+async def cmd_addsites(event):
+    if not is_owner(event.sender_id):
+        await event.reply(premium_emoji("\u274c <b>Owner Only.</b> You don't have permission."), parse_mode="html")
+        return
+
+    proxy = await get_proxy(event.sender_id)
+    if not proxy:
+        await event.reply(premium_emoji("\u274c <b>No proxy set.</b> Use <code>/addpx ip:port:user:pass</code> first."), parse_mode="html")
+        return
+
+    if not event.reply_to_msg_id:
+        await event.reply(
+            premium_emoji("\u274c Reply to a <code>.txt</code> file containing site URLs (one per line)."),
+            parse_mode="html",
+        )
+        return
+
+    reply_msg = await event.get_reply_message()
+    if not reply_msg.file or not reply_msg.file.name or not reply_msg.file.name.endswith(".txt"):
+        await event.reply(premium_emoji("\u274c Please reply to a <code>.txt</code> file."), parse_mode="html")
+        return
+
+    status_msg = await event.reply(premium_emoji("\u23f3 Processing sites file..."), parse_mode="html")
+    file_path = await reply_msg.download_media()
+
+    async with aiofiles.open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+        content = await f.read()
+
+    try: os.remove(file_path)
+    except Exception: pass
+
+    urls = [line.strip() for line in content.splitlines() if line.strip()]
+    if not urls:
+        await status_msg.edit(premium_emoji("\u274c No URLs found in the file."), parse_mode="html")
+        return
+
+    await status_msg.edit(premium_emoji(f"🔄 <b>Testing {len(urls)} Sites...</b>"), parse_mode="html")
+    
+    from utils.checker import test_site
+    import asyncio
+    alive_urls = []
+    dead_urls = []
+    alive_lines = []
+    dead_lines = []
+    
+    for i in range(0, len(urls), 20):
+        batch = urls[i:i+20]
+        tasks = [test_site(u, proxy) for u in batch]
+        results = await asyncio.gather(*tasks)
+        
+        for res in results:
+            site_url = res["site"].replace("https://", "").replace("http://", "").rstrip("/")
+            if res["status"] == "alive":
+                alive_urls.append(res["site"])
+                price = res.get("price", "N/A")
+                msg = res.get("msg", "")
+                if msg:
+                    alive_lines.append(f"{site_url} ${price} | Order declined: {msg}")
+                else:
+                    alive_lines.append(f"{site_url} ${price} | Alive")
+            else:
+                dead_urls.append(res["site"])
+                msg = res.get("msg", "Site error")
+                dead_lines.append(f"{site_url} | {msg}")
+                
+        disp_alive = "\n".join([f"<code>{x}</code>" for x in alive_lines[-10:]])
+        disp_dead = "\n".join([f"<code>{x}</code>" for x in dead_lines[-10:]])
+        
+        txt = (
+            f"🛒 <b>Site Add Results</b>\n"
+            f"✅ Valid: {len(alive_urls)} | ❌ Dead: {len(dead_urls)}\n\n"
+        )
+        if disp_alive:
+            txt += f"✅ <b>Valid ({len(alive_urls)}):</b>\n{disp_alive}\n\n"
+        if disp_dead:
+            txt += f"❌ <b>Dead ({len(dead_urls)}):</b>\n{disp_dead}\n\n"
+            
+        txt += f"<i>Testing... {len(alive_urls)+len(dead_urls)}/{len(urls)}</i>"
+        await status_msg.edit(premium_emoji(txt), parse_mode="html")
+
+    for url in alive_urls:
+        await add_site(url)
+
     count = await site_count()
-    await event.reply(premium_emoji(f"✅ <b>Site Added!</b>\n\n<code>{url}</code>\n\n📊 Total alive sites: {count}"), parse_mode="html")
+    
+    full_text = (
+        f"🛒 Site Add Results\n"
+        f"✅ Valid Added: {len(alive_urls)} | ❌ Dead Rejected: {len(dead_urls)}\n\n"
+    )
+    if alive_lines:
+        full_text += f"✅ Valid ({len(alive_urls)}):\n" + "\n".join(alive_lines) + "\n\n"
+    if dead_lines:
+        full_text += f"❌ Dead ({len(dead_urls)}):\n" + "\n".join(dead_lines) + "\n\n"
+        
+    filename = f"add_result_{event.sender_id}.txt"
+    async with aiofiles.open(filename, "w", encoding="utf-8") as f:
+        await f.write(full_text)
+
+    disp_alive = "\n".join([f"<code>{x}</code>" for x in alive_lines[-10:]])
+    disp_dead = "\n".join([f"<code>{x}</code>" for x in dead_lines[-10:]])
+    
+    final_txt = (
+        f"🛒 <b>Site Add Results</b>\n"
+        f"✅ Valid Added: {len(alive_urls)} | ❌ Dead Rejected: {len(dead_urls)}\n"
+        f"📊 Total Alive Sites: {count}\n\n"
+    )
+    if disp_alive:
+        final_txt += f"✅ <b>Valid ({len(alive_urls)}):</b>\n{disp_alive}\n\n"
+    if disp_dead:
+        final_txt += f"❌ <b>Dead ({len(dead_urls)}):</b>\n{disp_dead}\n\n"
+        
+    final_txt += f"📎 <b>Full results sent as .txt file.</b>"
+    
+    await event.reply(premium_emoji(final_txt), file=filename, parse_mode="html")
+    await status_msg.delete()
+    try: os.remove(filename)
+    except: pass
 
 
 @bot.on(events.NewMessage(pattern=r"^/rm\s+"))
 async def cmd_rm(event):
-    if not await _ensure_and_check_premium(event): return
+    if not is_owner(event.sender_id):
+        await event.reply(premium_emoji("\u274c <b>Owner Only.</b> You don't have permission."), parse_mode="html")
+        return
     url = event.message.text.split(" ", 1)[1].strip()
     if not url:
-        await event.reply(premium_emoji("❌ Usage: <code>/rm https://site.com</code>"), parse_mode="html")
+        await event.reply(premium_emoji("\u274c Usage: <code>/rm https://site.com</code> or <code>/rm all</code>"), parse_mode="html")
         return
+
+    if url.lower() == "all":
+        from database.sites import remove_all_sites
+        count = await remove_all_sites()
+        await event.reply(premium_emoji(f"\u2705 <b>All Sites Removed!</b>\n\nDeleted {count} sites."), parse_mode="html")
+        return
+
     await remove_site(url)
-    await event.reply(premium_emoji(f"✅ <b>Site Removed!</b>\n\n<code>{url}</code> has been deleted."), parse_mode="html")
+    await event.reply(premium_emoji(f"\u2705 <b>Site Removed!</b>\n\n<code>{url}</code> has been deleted."), parse_mode="html")
+
+def _kb_sites(page: int, total_pages: int):
+    buttons = []
+    nav = []
+    if page > 1:
+        nav.append(Button.inline("⬅️ Previous", data=f"sitepage_{page-1}"))
+    if page < total_pages:
+        nav.append(Button.inline("Next ➡️", data=f"sitepage_{page+1}"))
+    if nav:
+        buttons.append(nav)
+    buttons.append([Button.inline("❌ Close", data="stop")])
+    return buttons
+
+async def _txt_sites(page: int, sites: list):
+    per_page = 20
+    total_pages = max(1, (len(sites) + per_page - 1) // per_page)
+    if page > total_pages: page = total_pages
+    
+    start = (page - 1) * per_page
+    end = start + per_page
+    current_sites = sites[start:end]
+    
+    txt = f"🌐 <b>Saved Sites (Page {page}/{total_pages})</b>\n\n"
+    for i, site in enumerate(current_sites, start=start+1):
+        txt += f"<b>{i}.</b> <code>{site}</code>\n"
+        
+    txt += f"\n📊 <b>Total Sites:</b> {len(sites)}"
+    return txt, _kb_sites(page, total_pages)
+
+@bot.on(events.NewMessage(pattern=r"^/viewsites$"))
+async def cmd_viewsites(event):
+    if not is_owner(event.sender_id):
+        await event.reply(premium_emoji("\u274c <b>Owner Only.</b>"), parse_mode="html")
+        return
+    
+    sites = await get_all_sites()
+    if not sites:
+        await event.reply(premium_emoji("❌ No sites in database."), parse_mode="html")
+        return
+        
+    txt, kb = await _txt_sites(1, sites)
+    await event.reply(premium_emoji(txt), buttons=kb, parse_mode="html")
+
+@bot.on(events.CallbackQuery(pattern=r"^sitepage_(\d+)$"))
+async def cb_site_page(event):
+    if not is_owner(event.sender_id):
+        await event.answer("Owner Only.", alert=True)
+        return
+    page = int(event.pattern_match.group(1))
+    sites = await get_all_sites()
+    if not sites:
+        await event.answer("No sites.", alert=True)
+        return
+        
+    txt, kb = await _txt_sites(page, sites)
+    await event.edit(premium_emoji(txt), buttons=kb, parse_mode="html")
 
 
-@bot.on(events.NewMessage(pattern="/site"))
+@bot.on(events.NewMessage(pattern=r"^/testsites$"))
 async def cmd_site(event):
+    if not is_owner(event.sender_id):
+        await event.reply(premium_emoji("\u274c <b>Owner Only.</b>"), parse_mode="html")
+        return
     user_id = event.sender_id
     if not await _ensure_and_check_premium(event): return
     proxy = await get_proxy(user_id)
@@ -1011,34 +1396,163 @@ async def cmd_site(event):
 
     sites = await get_all_sites()
     if not sites:
-        await event.reply(premium_emoji("❌ No sites in database. Nothing to check."))
+        await event.reply(premium_emoji("❌ No sites in database. Nothing to check."), parse_mode="html")
         return
 
-    status_msg = await event.reply(premium_emoji(f"🔥 Checking <b>{len(sites)}</b> sites..."), parse_mode="html")
+    status_msg = await event.reply(premium_emoji(f"🛒 <b>Site Test Results</b>\n\n\u23f3 Starting..."), parse_mode="html")
     alive, dead = [], []
+    alive_lines, dead_lines = [], []
     try:
         for i in range(0, len(sites), 10):
             batch   = sites[i : i + 10]
             tasks   = [test_site(site, proxy) for site in batch]
             results = await asyncio.gather(*tasks)
             for res in results:
-                if res["status"] == "alive": alive.append(res["site"])
+                site_url = res["site"].replace("https://", "").replace("http://", "").rstrip("/")
+                if res["status"] == "alive": 
+                    alive.append(res["site"])
+                    price = res.get("price", "N/A")
+                    msg = res.get("msg", "")
+                    if msg:
+                        alive_lines.append(f"{site_url} ${price} | Order declined: {msg}")
+                    else:
+                        alive_lines.append(f"{site_url} ${price} | Alive")
                 else:
                     dead.append(res["site"])
+                    msg = res.get("msg", "Site error")
+                    dead_lines.append(f"{site_url} | {msg}")
                     await mark_site_dead(res["site"])
-            await status_msg.edit(premium_emoji(f"🔥 Checking sites...\n\n<b>Checked:</b> {len(alive)+len(dead)}/{len(sites)}\n<b>Alive:</b> {len(alive)}\n<b>Dead:</b> {len(dead)}"), parse_mode="html")
-        await status_msg.edit(premium_emoji(f"✅ <b>Site Check Complete!</b>\n\n<b>Total:</b> {len(sites)}\n<b>Alive:</b> {len(alive)}\n<b>Marked Dead:</b> {len(dead)}"), parse_mode="html")
+                    
+            disp_alive = "\n".join([f"<code>{x}</code>" for x in alive_lines[-10:]])
+            disp_dead = "\n".join([f"<code>{x}</code>" for x in dead_lines[-10:]])
+            
+            txt = (
+                f"🛒 <b>Site Test Results</b>\n"
+                f"✅ Valid: {len(alive)} | ❌ Dead: {len(dead)}\n\n"
+            )
+            if disp_alive:
+                txt += f"✅ <b>Valid ({len(alive)}):</b>\n{disp_alive}\n\n"
+            if disp_dead:
+                txt += f"❌ <b>Dead ({len(dead)}):</b>\n{disp_dead}\n\n"
+                
+            txt += f"<i>Testing... {len(alive)+len(dead)}/{len(sites)}</i>"
+            await status_msg.edit(premium_emoji(txt), parse_mode="html")
+            
+        full_text = (
+            f"🛒 Site Test Results\n"
+            f"✅ Valid: {len(alive)} | ❌ Dead: {len(dead)}\n\n"
+        )
+        if alive_lines:
+            full_text += f"✅ Valid ({len(alive)}):\n" + "\n".join(alive_lines) + "\n\n"
+        if dead_lines:
+            full_text += f"❌ Dead ({len(dead)}):\n" + "\n".join(dead_lines) + "\n\n"
+            
+        filename = f"sites_result_{event.sender_id}.txt"
+        async with aiofiles.open(filename, "w", encoding="utf-8") as f:
+            await f.write(full_text)
+            
+        disp_alive = "\n".join([f"<code>{x}</code>" for x in alive_lines[-10:]])
+        disp_dead = "\n".join([f"<code>{x}</code>" for x in dead_lines[-10:]])
+        
+        final_txt = (
+            f"🛒 <b>Site Test Results</b>\n"
+            f"✅ Valid: {len(alive)} | ❌ Dead: {len(dead)}\n\n"
+        )
+        if disp_alive:
+            final_txt += f"✅ <b>Valid ({len(alive)}):</b>\n{disp_alive}\n\n"
+        if disp_dead:
+            final_txt += f"❌ <b>Dead ({len(dead)}):</b>\n{disp_dead}\n\n"
+            
+        final_txt += f"📎 <b>Full results sent as .txt file.</b>"
+        
+        await event.reply(premium_emoji(final_txt), file=filename, parse_mode="html")
+        await status_msg.delete()
+        try: os.remove(filename)
+        except: pass
+        
     except Exception as exc:
-        await status_msg.edit(premium_emoji(f"❌ Error during site check: {exc}"))
+        await status_msg.edit(premium_emoji(f"❌ Error during site check: {exc}"), parse_mode="html")
 
+def _kb_admin():
+    return [
+        [Button.inline("➕ Add Site", data="admin_addsite"), Button.inline("📋 View Sites", data="admin_viewsites")],
+        [Button.inline("🔄 Test Sites", data="admin_testsites"), Button.inline("🗑 Remove All Sites", data="admin_rm_all")],
+        [Button.inline("👑 Elevate User", data="admin_elevate"), Button.inline("🚫 Demote User", data="admin_demote")],
+        [Button.inline("❌ Close", data="stop")]
+    ]
 
+def _txt_admin_panel():
+    return (
+        "👑 <b>Admin Control Panel</b>\n\n"
+        "<b>Admin Commands:</b>\n"
+        "<code>/addsite [url]</code> - Add a site\n"
+        "<code>/addsites</code> - Bulk add via .txt\n"
+        "<code>/testsites</code> - Test all sites\n"
+        "<code>/viewsites</code> - View saved sites\n"
+        "<code>/rm [url]</code> - Remove a site\n"
+        "<code>/rm all</code> - Remove all sites\n\n"
+        "<b>Owner Commands:</b>\n"
+        "<code>/elevate [id] [plan]</code> - Grant premium\n"
+        "<code>/demote [id]</code> - Revoke premium\n\n"
+        "<i>Or use the interactive buttons below:</i>"
+    )
+
+@bot.on(events.NewMessage(pattern=r"^/admin$"))
+async def cmd_admin(event):
+    if not is_owner(event.sender_id):
+        await event.reply(premium_emoji("\u274c <b>Owner Only.</b>"), parse_mode="html")
+        return
+    await event.reply(premium_emoji(_txt_admin_panel()), buttons=_kb_admin(), parse_mode="html")
+
+@bot.on(events.CallbackQuery(pattern=r"^admin_(\w+)$"))
+async def cb_admin_menu(event):
+    if not is_owner(event.sender_id):
+        await event.answer("Owner Only.", alert=True)
+        return
+        
+    action = event.pattern_match.group(1).decode("utf-8")
+    
+    if action == "addsite":
+        await event.edit(premium_emoji("<b>To add sites, use the following commands:</b>\n\n<code>/addsite https://site.com</code>\n\nOr to add in bulk, reply to a <code>.txt</code> file with:\n<code>/addsites</code>"), buttons=[[Button.inline("🔙 Back", data="admin_back")]], parse_mode="html")
+        
+    elif action == "viewsites":
+        sites = await get_all_sites()
+        if not sites:
+            await event.answer("❌ No sites in database.", alert=True)
+            return
+        txt, kb = await _txt_sites(1, sites)
+        await event.edit(premium_emoji(txt), buttons=kb, parse_mode="html")
+        
+    elif action == "testsites":
+        await event.edit(premium_emoji("<b>To test all sites, run the command:</b>\n\n<code>/testsites</code>"), buttons=[[Button.inline("🔙 Back", data="admin_back")]], parse_mode="html")
+        
+    elif action == "rm_all":
+        from database.sites import remove_all_sites
+        count = await remove_all_sites()
+        await event.answer(f"✅ All {count} Sites Removed!", alert=True)
+        await event.edit(premium_emoji(f"👑 <b>Admin Control Panel</b>\n\n\u2705 <b>All Sites Removed!</b> (Deleted {count} sites)"), buttons=_kb_admin(), parse_mode="html")
+        
+    elif action == "elevate":
+        if event.sender_id != OWNER_ID:
+            await event.answer("Owner Only (Not Admin).", alert=True)
+            return
+        await event.edit(premium_emoji("<b>To grant premium, use:</b>\n\n<code>/elevate user_id core</code>\n<code>/elevate user_id nova</code>\n<code>/elevate user_id monarch</code>"), buttons=[[Button.inline("🔙 Back", data="admin_back")]], parse_mode="html")
+        
+    elif action == "demote":
+        if event.sender_id != OWNER_ID:
+            await event.answer("Owner Only (Not Admin).", alert=True)
+            return
+        await event.edit(premium_emoji("<b>To revoke premium, use:</b>\n\n<code>/demote user_id</code>"), buttons=[[Button.inline("🔙 Back", data="admin_back")]], parse_mode="html")
+        
+    elif action == "back":
+        await event.edit(premium_emoji(_txt_admin_panel()), buttons=_kb_admin(), parse_mode="html")
 # ══════════════
 # ADMIN COMMANDS
 # ══════════════
 
 @bot.on(events.NewMessage(pattern=r"^/elevate\s+"))
 async def cmd_elevate(event):
-    if not is_owner(event.sender_id): return
+    if event.sender_id != OWNER_ID: return
     try:
         args = event.raw_text.split()
         if len(args) != 3:
@@ -1055,9 +1569,33 @@ async def cmd_elevate(event):
         await event.reply(f"❌ Error:\n<code>{e}</code>", parse_mode="html")
 
 
+@bot.on(events.NewMessage(pattern=r"^/demote\s+"))
+async def cmd_demote(event):
+    if event.sender_id != OWNER_ID: return
+    try:
+        args = event.raw_text.split()
+        if len(args) != 2:
+            await event.reply("Usage: <code>/demote user_id</code>", parse_mode="html")
+            return
+        user_id = int(args[1])
+        await remove_plan(user_id)
+        await event.reply(f"\u2705 Premium removed.\n\n\U0001f464 User: <code>{user_id}</code>", parse_mode="html")
+    except Exception as e:
+        await event.reply(f"\u274c Error:\n<code>{e}</code>", parse_mode="html")
+
+
 # ══════════════════════
 # ENTRY POINT
 # ══════════════════════
 
-print("✅ Bot started successfully!")
+async def startup():
+    print("Checking admin permissions in DB...")
+    # Give owner and admins premium monarch plan on fresh db
+    for uid in [OWNER_ID] + ADMIN_IDS:
+        if not await is_premium(uid):
+            await set_plan(uid, "monarch")
+            print(f"Granted premium 'monarch' to Admin/Owner ID: {uid}")
+
+bot.loop.run_until_complete(startup())
+print("Bot started successfully!")
 bot.run_until_disconnected()

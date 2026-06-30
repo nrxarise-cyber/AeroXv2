@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
-from db import users_col
+from typing import Any, Dict, List, Optional
+import random
+from db import users_col, proxies_col
 
 # ==========================================
 # INTERNAL HELPER FUNCTIONS
@@ -95,7 +96,6 @@ async def ensure_user(
                 "plan": None,
                 "credits": 0,
                 "expires_at": None,
-                "proxy": None,
                 "total_checks": 0,
                 "approved": 0,
                 "charged": 0,
@@ -150,7 +150,6 @@ async def get_profile(user_id: int) -> Optional[Dict[str, Any]]:
         "dead": user.get("dead", 0),
         "banned": user.get("banned", False),
         "join_date": user.get("join_date"),
-        "proxy": user.get("proxy")
     }
 
 
@@ -452,25 +451,57 @@ async def update_stats(
 # ==========================================
 
 async def set_proxy(user_id: int, proxy: str) -> None:
-    """Configure or update a user-specific proxy server connection string."""
-    await users_col.update_one(
-        {"user_id": user_id},
-        {"$set": {"proxy": proxy}},
+    """Add a single proxy for the user (deduplicates by user_id + proxy)."""
+    await proxies_col.update_one(
+        {"user_id": user_id, "proxy": proxy},
+        {"$set": {"user_id": user_id, "proxy": proxy}},
         upsert=True
     )
 
 
+async def add_proxies_bulk(user_id: int, proxies: list) -> int:
+    """Add multiple proxies for the user in bulk. Returns count of proxies processed."""
+    if not proxies:
+        return 0
+    from pymongo import UpdateOne
+    ops = [
+        UpdateOne(
+            {"user_id": user_id, "proxy": p},
+            {"$set": {"user_id": user_id, "proxy": p}},
+            upsert=True
+        )
+        for p in proxies
+    ]
+    await proxies_col.bulk_write(ops)
+    return len(proxies)
+
+
 async def get_proxy(user_id: int) -> Optional[str]:
-    """Retrieve the connection string for the user's custom proxy, if configured."""
-    user = await users_col.find_one({"user_id": user_id}, {"proxy": 1})
-    if not user:
+    """Retrieve a random proxy from the user's proxy pool."""
+    proxies = await proxies_col.find({"user_id": user_id}).to_list(length=10000)
+    if not proxies:
         return None
-    return user.get("proxy")
+    return random.choice(proxies)["proxy"]
 
 
-async def remove_proxy(user_id: int) -> None:
-    """Remove the custom proxy configuration, reverting the user to default routing."""
-    await users_col.update_one(
-        {"user_id": user_id},
-        {"$unset": {"proxy": ""}}
-    )
+async def get_proxy_count(user_id: int) -> int:
+    """Count how many proxies a user has stored."""
+    return await proxies_col.count_documents({"user_id": user_id})
+
+
+async def get_all_user_proxies(user_id: int) -> List[str]:
+    """Get all proxy strings for a user."""
+    docs = await proxies_col.find({"user_id": user_id}).to_list(length=10000)
+    return [d["proxy"] for d in docs]
+
+
+async def remove_proxy(user_id: int) -> int:
+    """Remove all proxies for a user. Returns the number of proxies deleted."""
+    result = await proxies_col.delete_many({"user_id": user_id})
+    return result.deleted_count
+
+
+async def remove_single_proxy(user_id: int, proxy: str) -> bool:
+    """Remove a specific proxy for a user. Returns True if deleted."""
+    result = await proxies_col.delete_one({"user_id": user_id, "proxy": proxy})
+    return result.deleted_count > 0

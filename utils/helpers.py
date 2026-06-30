@@ -12,6 +12,9 @@ _DEAD_INDICATORS = (
     'error in 1st req',
     'error in 1 req',
     'cloudflare',
+    'product_not_found',
+    'missing site parameter',
+    'not a shopify',
     'connection failed',
     'timed out',
     'access denied',
@@ -53,7 +56,6 @@ _DEAD_INDICATORS = (
     'captcha_required',
     'captcha required',
     'site errors',
-    'failed',
     'all products sold out',
     'no_session_token',
     'tokenize_fail',
@@ -85,8 +87,11 @@ def extract_cc(text):
 
 
 def is_dead_site_error(error_msg):
-    if not error_msg:
+    if error_msg is None:
         return True
+
+    if not error_msg:
+        return False
 
     error_msg = str(error_msg).lower()
 

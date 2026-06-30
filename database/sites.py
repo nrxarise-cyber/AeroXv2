@@ -59,3 +59,7 @@ async def site_count():
     return await sites_col.count_documents(
         {"status": "alive"}
     )
+
+async def remove_all_sites():
+    result = await sites_col.delete_many({})
+    return result.deleted_count
