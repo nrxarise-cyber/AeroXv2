@@ -8,7 +8,7 @@ API_HASH = os.getenv("API_HASH", "")
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 
 MONGO_URI = os.getenv("MONGO_URI", "")
-CHECKER_API_URL = os.getenv("CHECKER_API_URL", "https://Worker.xb1ns.com")
+CHECKER_API_URL = os.getenv("CHECKER_API_URL", "")
 OWNER_ID = int(os.getenv("OWNER_ID", 0))
 
 _admin_ids_str = os.getenv("ADMIN_IDS", "")
