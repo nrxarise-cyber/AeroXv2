@@ -3,13 +3,34 @@ import os
 
 load_dotenv()
 
-API_ID = int(os.getenv("API_ID", 0))
+def _get_int(key, default=0):
+    val = os.getenv(key)
+    if not val or not val.strip():
+        return default
+    try:
+        return int(val.strip())
+    except ValueError:
+        return default
+
+def _get_admin_ids():
+    val = os.getenv("ADMIN_IDS", "")
+    if not val or not val.strip():
+        return []
+    # Clean brackets, braces, and quotes in case user pasted [123, 456]
+    cleaned = val.replace("[", "").replace("]", "").replace("'", "").replace('"', "").replace("{", "").replace("}", "").strip()
+    ids = []
+    for x in cleaned.split(","):
+        x = x.strip()
+        if x.isdigit():
+            ids.append(int(x))
+    return ids
+
+API_ID = _get_int("API_ID", 0)
 API_HASH = os.getenv("API_HASH", "")
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 
 MONGO_URI = os.getenv("MONGO_URI", "")
 CHECKER_API_URL = os.getenv("CHECKER_API_URL", "")
-OWNER_ID = int(os.getenv("OWNER_ID", 0))
+OWNER_ID = _get_int("OWNER_ID", 0)
 
-_admin_ids_str = os.getenv("ADMIN_IDS", "")
-ADMIN_IDS = [int(x.strip()) for x in _admin_ids_str.split(",") if x.strip()]
+ADMIN_IDS = _get_admin_ids()
