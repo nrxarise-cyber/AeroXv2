@@ -47,6 +47,8 @@ bot = TelegramClient("checker_bot", API_ID, API_HASH).start(bot_token=BOT_TOKEN)
 
 # Active bulk-checking sessions: {session_key: {'paused': bool}}
 active_sessions: dict = {}
+# Temporary storage for export buttons
+SHOPIFY_SESSION_RESULTS: dict = {}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -101,10 +103,26 @@ def _kb_back_profile() -> list:
     return [[Button.inline("🔙  𝘉𝘢𝘤𝘬", b"menu:profile")]]
 
 
-def _kb_progress(session_key: str) -> list:
+def _kb_progress(session_key: str, results: dict = None) -> list:
+    charged = len(results['charged']) if results else 0
+    approved = len(results['approved']) if results else 0
+    dead = len(results['dead']) if results else 0
+    errors = len(results.get('errors', [])) if results else 0
+    total = results['total'] if results else 0
+    checked = results['checked'] if results else 0
+    pct = int((checked / total) * 100) if total > 0 else 0
+
+    user_id = session_key.split('_')[0] if session_key else '0'
+
     return [
-        [Button.inline("⏸️  Pause", b"pause"), Button.inline("▶️  Resume", b"resume")],
-        [Button.inline("🛑  Stop",  b"stop")],
+        [Button.inline(f"📋 {checked}/{total} ({pct}%)", b"noop")],
+        [Button.inline(f"✅ Charged: {charged}", f"export_charged:{user_id}".encode()),
+         Button.inline(f"🔥 Approved: {approved}", f"export_approved:{user_id}".encode())],
+        [Button.inline(f"⚫ Insuff: 0", b"noop"),
+         Button.inline(f"❌ Declined: {dead}", f"export_declined:{user_id}".encode())],
+        [Button.inline(f"⚠️ Errors: {errors}", f"export_errors:{user_id}".encode())],
+        [Button.inline("⏸️ Pause", b"pause"), Button.inline("▶️ Resume", b"resume")],
+        [Button.inline("🛑 Stop", b"stop")],
     ]
 
 
@@ -299,8 +317,8 @@ async def _require_sites_and_proxy(event, user_id: int):
         )
         return None, None
 
-    proxy = await get_proxy(user_id)
-    if not proxy:
+    proxies = await get_all_user_proxies(user_id)
+    if not proxies:
         await event.reply(
             premium_emoji(
                 "❌ No proxy set.\n\nUse <code>/addproxy ip:port:user:pass</code> to add your proxy."
@@ -309,7 +327,7 @@ async def _require_sites_and_proxy(event, user_id: int):
         )
         return None, None
 
-    return sites, proxy
+    return sites, proxies
 
 def is_owner(user_id: int) -> bool:
     return user_id == OWNER_ID or user_id in ADMIN_IDS
@@ -348,19 +366,25 @@ def _build_progress_message(results: dict, checked: int) -> str:
         if results["charged"]
         else (results["approved"][0]["gateway"] if results["approved"] else "Unknown")
     )
+    last_card = results.get('last_card', 'None')[:16]
+    last_resp = results.get('last_response', 'Waiting...')[:16]
+    last_price = results.get('last_price', '-')[:7]
+    errors_count = len(results.get('errors', []))
+
     return (
         f"<b>🐺 𝐀ᴇʀᴏ𝐗</b>\n"
         f"<b>━━━━━━━━━━━━━━━━━</b>\n"
         f"<b>⚡💠 𝐏ʀᴏɢʀᴇ𝐬𝐬</b>\n"
         f"<blockquote>"
-        f"💳 𝐓ᴏ𝐓ᴀʟ: {results['total']} | "
-        f"✅ {len(results['charged'])} | "
-        f"🔥 {len(results['approved'])} | "
-        f"❌ {len(results['dead'])}"
+        f"💳 𝐂ᴀʀᴅ: <code>{last_card}</code>\n"
+        f"📝 {last_resp}\n"
+        f"💰 {last_price}"
         f"</blockquote>\n"
-        f"<blockquote>📊 𝐂ʜᴇ𝐂ᴋᴇᴅ: {checked}/{results['total']}</blockquote>\n"
-        f"<blockquote>🌐 𝐆ᴀᴛᴇᴡᴀʏ: 🔥 {gateway}</blockquote>\n"
-        f"<blockquote>⏱️ 𝐓ɪᴍᴇ: {format_elapsed(elapsed)}</blockquote>\n"
+        f"<blockquote>"
+        f"❌ 𝐃ᴇᴄʟɪɴᴇᴅ: {len(results['dead'])}\n"
+        f"📊 {checked}/{results['total']}\n"
+        f"⏱️ {format_elapsed(elapsed)}"
+        f"</blockquote>\n"
         f"<b>━━━━━━━━━━━━━━━━━</b>"
     )
 
@@ -371,11 +395,14 @@ def _build_final_summary(results: dict) -> str:
         if results["charged"]
         else (results["approved"][0]["gateway"] if results["approved"] else "Unknown")
     )
+    errors_count = len(results.get('errors', []))
     hits_text = ""
     for r in results["charged"][:5]:
         hits_text += f"✅ <code>{r['card']}</code>\n"
     for r in results["approved"][:5]:
         hits_text += f"🔥 <code>{r['card']}</code>\n"
+    for r in results.get("insuff", [])[:5]:
+        hits_text += f"⚫ <code>{r['card']}</code>\n"
     if not hits_text:
         hits_text = "No hits found"
 
@@ -383,8 +410,13 @@ def _build_final_summary(results: dict) -> str:
         f"<b>🐺 𝐀ᴇʀᴏ𝐗</b>\n"
         f"<b>━━━━━━━━━━━━━━━━━</b>\n"
         f"<b>⚡💠 𝐑ᴇ𝐬ᴜʟ𝐭𝐬</b>\n"
-        f"<blockquote>💳 𝐓ᴏ𝐓ᴀʟ: {results['total']} | ✅ {len(results['charged'])} | "
-        f"🔥 {len(results['approved'])} | ❌ {len(results['dead'])}</blockquote>\n"
+        f"<blockquote>📊 𝐑ᴇ𝐬ᴜʟ𝐭𝐬:\n"
+        f"   ┣ ✅ 𝐂ʜᴀʀɢᴇᴅ: {len(results['charged'])}\n"
+        f"   ┣ 🔥 𝐀ᴘᴘʀᴏᴠᴇᴅ: {len(results['approved'])}\n"
+        f"   ┣ ⚫ 𝐈ɴsᴜғғ: {len(results.get('insuff', []))}\n"
+        f"   ┣ ❌ 𝐃ᴇᴄʟɪɴᴇᴅ: {len(results['dead'])}\n"
+        f"   ┣ ⚠️ 𝐄ʀʀᴏʀs: {errors_count}\n"
+        f"   ┗ 📊 𝐓ᴏᴛᴀʟ: {results['total']}</blockquote>\n"
         f"<blockquote>🌐 𝐆ᴀᴛᴇᴡᴀʏ: 🔥 {gateway}</blockquote>\n"
         f"<blockquote>⏱️ 𝐓ɪᴍᴇ: {format_elapsed(elapsed)}</blockquote>\n"
         f"<b>━━━━━━━━━━━━━━━━━</b>\n"
@@ -411,7 +443,8 @@ async def _send_realtime_hit(user_id: int, result: dict) -> None:
 
 
 async def _update_progress(user_id: int, message_id: int, results: dict, checked: int) -> None:
-    buttons = _kb_progress(f"{user_id}_{message_id}")
+    session_key = f"{user_id}_{message_id}"
+    buttons = _kb_progress(session_key, results)
     try:
         await bot.edit_message(
             user_id,
@@ -427,6 +460,7 @@ async def _update_progress(user_id: int, message_id: int, results: dict, checked
 async def _send_final_results(user_id: int, results: dict) -> None:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename  = f"shopiii_{user_id}_{timestamp}.txt"
+    errors = results.get('errors', [])
 
     async with aiofiles.open(filename, "w", encoding="utf-8") as f:
         await f.write("=" * 70 + "\n")
@@ -439,20 +473,46 @@ async def _send_final_results(user_id: int, results: dict) -> None:
         await f.write(f"\n🔥 APPROVED ({len(results['approved'])}):\n" + "-" * 70 + "\n")
         for r in results["approved"]:
             await f.write(f"{r['card']} | {r.get('gateway','Unknown')} | {r.get('price','-')} | {r['message'][:100]} | {r.get('site','Unknown')}\n")
-        await f.write(f"\n❌ DEAD ({len(results['dead'])}):\n" + "-" * 70 + "\n")
+        await f.write(f"\n⚫ INSUFFICIENT FUNDS ({len(results.get('insuff', []))}):\n" + "-" * 70 + "\n")
+        for r in results.get("insuff", []):
+            await f.write(f"{r['card']} | {r.get('gateway','Unknown')} | {r.get('price','-')} | {r['message'][:100]} | {r.get('site','Unknown')}\n")
+        await f.write(f"\n❌ DECLINED ({len(results['dead'])}):\n" + "-" * 70 + "\n")
         for r in results["dead"]:
             await f.write(f"{r['card']} | {r.get('gateway','Unknown')} | {r.get('price','-')} | {r['message'][:100]} | {r.get('site','Unknown')}\n")
+        await f.write(f"\n⚠️ ERRORS ({len(errors)}):\n" + "-" * 70 + "\n")
+        for r in errors:
+            await f.write(f"{r['card']} | {r.get('gateway','Unknown')} | {r.get('price','-')} | {r['message'][:100]} | {r.get('site','Unknown')}\n")
+
+    # Build final buttons
+    buttons = [
+        [Button.inline(f"✅ Charged: {len(results['charged'])}", f"export_charged:{user_id}".encode()),
+         Button.inline(f"🔥 Approved: {len(results['approved'])}", f"export_approved:{user_id}".encode())],
+        [Button.inline(f"⚫ Insuff: {len(results.get('insuff', []))}", f"export_insuff:{user_id}".encode()),
+         Button.inline(f"❌ Declined: {len(results['dead'])}", f"export_declined:{user_id}".encode())],
+        [Button.inline(f"⚠️ Errors: {len(errors)}", f"export_errors:{user_id}".encode())],
+    ]
+    if errors:
+        buttons.append([Button.inline(f"⚙️ Retry errors ({len(errors)})", f"retry_errors:{user_id}".encode())])
 
     await bot.send_message(
         user_id,
         premium_emoji(_build_final_summary(results)),
         file=filename,
+        buttons=buttons,
         parse_mode="html",
     )
     try:
         os.remove(filename)
     except Exception:
         pass
+
+    # Store results temporarily for export buttons
+    SHOPIFY_SESSION_RESULTS[user_id] = results
+    # Clean up after 5 minutes
+    async def _cleanup():
+        await asyncio.sleep(300)
+        SHOPIFY_SESSION_RESULTS.pop(user_id, None)
+    asyncio.create_task(_cleanup())
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -595,6 +655,98 @@ async def cb_stop(event):
         )
 
 
+@bot.on(events.CallbackQuery(pattern=r"^export_(charged|approved|insuff|declined|errors):(\d+)"))
+async def cb_export_results(event):
+    category = event.pattern_match.group(1).decode()
+    target_user_id = int(event.pattern_match.group(2).decode())
+
+    if event.sender_id != target_user_id:
+        await event.answer("❌ Not your session results!", alert=True)
+        return
+
+    if target_user_id not in SHOPIFY_SESSION_RESULTS:
+        await event.answer("❌ No results found! Run a check first.", alert=True)
+        return
+
+    user_results = SHOPIFY_SESSION_RESULTS[target_user_id]
+    
+    # map declined to dead
+    key = "dead" if category == "declined" else category
+    cards_list = user_results.get(key, [])
+    
+    if not cards_list:
+        await event.answer(f"❌ No {category.capitalize()} cards found!", alert=True)
+        return
+
+    emoji_map = {
+        "charged": "✅",
+        "approved": "🔥",
+        "insuff": "⚫",
+        "declined": "❌",
+        "errors": "⚠️"
+    }
+    emoji = emoji_map.get(category, "❓")
+    title = category.upper()
+    filename = f"{category}_cards_{target_user_id}.txt"
+
+    content = f"{emoji} {title} CARDS\n"
+    content += "=" * 45 + "\n\n"
+    for i, item in enumerate(cards_list, 1):
+        content += f"[{i}] Card: {item['card']}\n"
+        content += f"    Response: {item.get('message', 'N/A')[:150]}\n"
+        content += f"    Gateway: {item.get('gateway', 'Unknown')}\n"
+        content += f"    Price: {item.get('price', '-')}\n"
+        content += "-" * 30 + "\n"
+    content += f"\n📊 Total: {len(cards_list)} cards\n"
+    content += f"📅 Exported: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+
+    async with aiofiles.open(filename, 'w', encoding='utf-8') as f:
+        await f.write(content)
+
+    await event.answer(f"📤 Exporting {len(cards_list)} cards...", alert=False)
+    await bot.send_file(
+        target_user_id,
+        filename,
+        caption=premium_emoji(f"<b>{emoji} {category.capitalize()} Cards</b>\n📊 Total: {len(cards_list)} cards")
+    )
+
+    try:
+        os.remove(filename)
+    except Exception:
+        pass
+
+
+@bot.on(events.CallbackQuery(pattern=r"^retry_errors:(\d+)"))
+async def cb_retry_errors(event):
+    target_user_id = int(event.pattern_match.group(1).decode())
+
+    if event.sender_id != target_user_id:
+        await event.answer("❌ Not your session results!", alert=True)
+        return
+
+    if target_user_id not in SHOPIFY_SESSION_RESULTS:
+        await event.answer("❌ No results found to retry.", alert=True)
+        return
+
+    results = SHOPIFY_SESSION_RESULTS[target_user_id]
+    errors_list = results.get("errors", [])
+    if not errors_list:
+        await event.answer("❌ No errors found to retry.", alert=True)
+        return
+
+    error_cards = [r["card"] for r in errors_list]
+    
+    await event.answer("⚙️ Retrying errors...")
+    
+    try:
+        await event.delete()
+    except Exception:
+        pass
+
+    content = "\n".join(error_cards)
+    await _run_bulk_check(event, content, target_user_id)
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # /sh — SINGLE CARD CHECK  (alias: /cc)
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -605,7 +757,7 @@ async def _do_single_check(event):
     if not await _ensure_and_check_premium(event):
         return
 
-    sites, proxy = await _require_sites_and_proxy(event, user_id)
+    sites, proxies = await _require_sites_and_proxy(event, user_id)
     if sites is None:
         return
 
@@ -645,12 +797,12 @@ async def _do_single_check(event):
         parse_mode="html",
     )
     try:
-        result = await check_card_with_retry(card, sites, proxy, max_retries=3)
+        result = await check_card_with_retry(card, sites, proxies, max_retries=20)
 
         # Track stats based on result
         if result["status"] == "Charged":
             await update_stats(user_id, checks=0, charged=1)
-        elif result["status"] == "Approved":
+        elif result["status"] in ("Approved", "Insuff"):
             await update_stats(user_id, checks=0, approved=1)
         else:
             await update_stats(user_id, checks=0, dead=1)
@@ -660,6 +812,7 @@ async def _do_single_check(event):
         status_map = {
             "Charged": ("✅", "𝐂𝐡𝐚𝐫𝐠𝐞𝐝"),
             "Approved": ("🔥", "𝐋𝐢𝐯𝐞"),
+            "Insuff": ("🟢", "𝐈𝐧𝐬𝐮𝐟𝐟𝐢𝐜𝐢𝐞𝐧𝐭 𝐅𝐮𝐧𝐝𝐬"),
         }
         status_emoji, status_text = status_map.get(
             result["status"], ("❌", "𝐃𝐞𝐚𝐝")
@@ -733,7 +886,7 @@ async def cmd_msh(event):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 async def _run_bulk_check(event, content: str, user_id: int):
-    sites, proxy = await _require_sites_and_proxy(event, user_id)
+    sites, proxies = await _require_sites_and_proxy(event, user_id)
     if sites is None:
         return
 
@@ -746,21 +899,43 @@ async def _run_bulk_check(event, content: str, user_id: int):
         cards = cards[:5000]
 
     total_cards = len(cards)
-    status_msg = await event.reply(
-        premium_emoji(f"🫦 Starting check for <b>{total_cards}</b> cards..."),
-        parse_mode="html",
-    )
+    if hasattr(event, 'reply'):
+        status_msg = await event.reply(
+            premium_emoji(f"🫦 Starting check for <b>{total_cards}</b> cards..."),
+            parse_mode="html",
+        )
+    else:
+        status_msg = await bot.send_message(
+            user_id,
+            premium_emoji(f"🫦 Starting check for <b>{total_cards}</b> cards..."),
+            parse_mode="html",
+        )
 
     session_key = f"{user_id}_{status_msg.id}"
     active_sessions[session_key] = {"paused": False}
 
+    _DECLINE_KEYWORDS = (
+        "declined", "generic_error", "generic", "decision_rule_block",
+        "incorrect_number", "brand_not_supported",
+        "payments_credit_card_base_expired", "card_declined",
+        "do_not_honor", "lost_card", "stolen_card", "expired_card",
+        "invalid_account", "pickup_card", "restricted_card",
+        "security_violation", "transaction_not_allowed",
+    )
+
     all_results = {
         "charged":    [],
         "approved":   [],
+        "insuff":     [],
         "dead":       [],
+        "errors":     [],
         "total":      total_cards,
         "checked":    0,
         "start_time": time.time(),
+        "last_card":  "",
+        "last_response": "",
+        "last_price": "-",
+        "last_gateway": "Unknown",
     }
 
     try:
@@ -775,7 +950,7 @@ async def _run_bulk_check(event, content: str, user_id: int):
                 state = active_sessions.get(session_key)
                 if not state: break
                 while state.get("paused", False):
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(2)
                     state = active_sessions.get(session_key)
                     if not state: return
                 try:
@@ -785,15 +960,18 @@ async def _run_bulk_check(event, content: str, user_id: int):
 
                 # Consume one credit per card
                 if not await consume_credit(user_id):
-                    # No credits left - stop worker
                     break
 
                 cur_sites = await get_all_sites()
-                cur_proxy = await get_proxy(user_id)
-                if not cur_sites or not cur_proxy: break
+                cur_proxies = await get_all_user_proxies(user_id)
+                if not cur_sites or not cur_proxies: break
 
-                res = await check_card_with_retry(card, cur_sites, cur_proxy, max_retries=1)
+                res = await check_card_with_retry(card, cur_sites, cur_proxies, max_retries=20)
                 all_results["checked"] += 1
+                all_results["last_card"] = card
+                all_results["last_response"] = res.get('message', '')[:50]
+                all_results["last_price"] = res.get('price', '-')
+                all_results["last_gateway"] = res.get('gateway', 'Unknown')
 
                 if res["status"] == "Charged":
                     all_results["charged"].append(res)
@@ -803,8 +981,16 @@ async def _run_bulk_check(event, content: str, user_id: int):
                     all_results["approved"].append(res)
                     await update_stats(user_id, checks=0, approved=1)
                     await _send_realtime_hit(user_id, res)
+                elif res["status"] == "Insuff":
+                    all_results["insuff"].append(res)
+                    await update_stats(user_id, checks=0, approved=1)
+                    await _send_realtime_hit(user_id, res)
                 else:
-                    all_results["dead"].append(res)
+                    response_lower = res.get('message', '').lower()
+                    if any(k in response_lower for k in _DECLINE_KEYWORDS):
+                        all_results["dead"].append(res)
+                    else:
+                        all_results["errors"].append(res)
                     await update_stats(user_id, checks=0, dead=1)
 
                 queue.task_done()
@@ -833,7 +1019,7 @@ async def _run_bulk_check(event, content: str, user_id: int):
         if session_key in active_sessions:
             del active_sessions[session_key]
         try:
-            await save_log(user_id=user_id, total=all_results["total"], charged=len(all_results["charged"]), approved=len(all_results["approved"]))
+            await save_log(user_id=user_id, total=all_results["total"], charged=len(all_results["charged"]), approved=len(all_results["approved"]) + len(all_results["insuff"]))
         except Exception: pass
         try: await status_msg.delete()
         except Exception: pass

