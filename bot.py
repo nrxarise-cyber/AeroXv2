@@ -1082,7 +1082,7 @@ def _parse_proxies(text: str) -> list:
     return proxies
 
 
-@bot.on(events.NewMessage(pattern=r"^/addpx(?:\s+(.*))?$"))
+@bot.on(events.NewMessage(pattern=r"^/addpx(?:\s|$)"))
 async def cmd_addpx(event):
     # Check if replying to a .txt file for bulk proxy import
     if event.reply_to_msg_id:
@@ -1486,7 +1486,8 @@ async def cmd_addsites(event):
         
     final_txt += f"📎 <b>Full results sent as .txt file.</b>"
     
-    await event.reply(premium_emoji(final_txt), file=filename, parse_mode="html")
+    await event.reply(premium_emoji(final_txt), parse_mode="html")
+    await event.reply(file=filename)
     await status_msg.delete()
     try: os.remove(filename)
     except: pass
@@ -1520,7 +1521,7 @@ def _kb_sites(page: int, total_pages: int):
         nav.append(Button.inline("Next ➡️", data=f"sitepage_{page+1}"))
     if nav:
         buttons.append(nav)
-    buttons.append([Button.inline("❌ Close", data="stop")])
+    buttons.append([Button.inline("🔙 Back", data="admin_back")])
     return buttons
 
 async def _txt_sites(page: int, sites: list):
@@ -1651,7 +1652,8 @@ async def cmd_site(event):
             
         final_txt += f"📎 <b>Full results sent as .txt file.</b>"
         
-        await event.reply(premium_emoji(final_txt), file=filename, parse_mode="html")
+        await event.reply(premium_emoji(final_txt), parse_mode="html")
+        await event.reply(file=filename)
         await status_msg.delete()
         try: os.remove(filename)
         except: pass
@@ -1664,7 +1666,7 @@ def _kb_admin():
         [Button.inline("➕ Add Site", data="admin_addsite"), Button.inline("📋 View Sites", data="admin_viewsites")],
         [Button.inline("🔄 Test Sites", data="admin_testsites"), Button.inline("🗑 Remove All Sites", data="admin_rm_all")],
         [Button.inline("👑 Elevate User", data="admin_elevate"), Button.inline("🚫 Demote User", data="admin_demote")],
-        [Button.inline("❌ Close", data="stop")]
+        [Button.inline("🔙 Back", data="menu:main")]
     ]
 
 def _txt_admin_panel():
