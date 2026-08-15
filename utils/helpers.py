@@ -27,12 +27,7 @@ _DEAD_INDICATORS = (
     'empty reply from server',
     'httperror504',
     'http error',
-    'timeout',
-    'unreachable',
     'ssl error',
-    '502',
-    '503',
-    '504',
     'bad gateway',
     'service unavailable',
     'gateway timeout',
@@ -43,7 +38,6 @@ _DEAD_INDICATORS = (
     'failed to tokenize card',
     'failed to get proposal data',
     'submit rejected',
-    'submit rejected:',
     'handle error',
     'http 404',
     'delivery_delivery_line_detail_changed',
@@ -59,9 +53,6 @@ _DEAD_INDICATORS = (
     'all products sold out',
     'no_session_token',
     'tokenize_fail',
-    'failed',
-    'not supported',
-    'unsupported',
     'site not supported',
     'invalid site',
     'connection refused',
@@ -76,78 +67,98 @@ _DEAD_INDICATORS = (
     'internal server error',
     'server error',
     'page not found',
-    'not found',
     'http 500',
     'http 502',
     'http 503',
     'http 504',
     'cloudflare error',
     'cf-error',
-    'cf-ray',
     'challenge required',
-    'blocked',
     'access blocked',
 )
 
 
-def get_price_from_response(raw_response):
+def get_price_from_response(raw_response: dict) -> float:
     """Extract a float price from the API response."""
     try:
         price = raw_response.get('Price', '-')
-        if price != '-' and price != 0:
+        if price not in ('-', 0, None):
             price_clean = str(price).replace('$', '').replace(',', '').strip()
             return float(price_clean)
-    except Exception:
+    except (ValueError, TypeError, AttributeError):
         pass
     return 0.0
 
 
-def is_site_dead(response_msg, gateway, price):
+def is_site_dead(response_msg: str, gateway: str, price) -> bool:
     """Full site-dead check: response keywords + gateway + price validation."""
     if not response_msg:
         return True
+
     if not gateway or gateway == "Unknown":
         return True
+
     if "Shopify" not in str(gateway):
         return True
-    price_str = str(price)
-    if price_str in ("-", "$-", "$0", "$0.0", "0", "$0.00", "N/A"):
+
+    _dead_price_values = {"-", "$-", "$0", "$0.0", "0", "$0.00", "N/A", "0.0", "0.00"}
+    if str(price).strip() in _dead_price_values:
         return True
+
     return is_dead_site_error(response_msg)
 
 
-def is_dead_site_error(error_msg):
+def is_dead_site_error(error_msg) -> bool:
+    """Check if error message contains any dead site indicators."""
     if error_msg is None:
         return True
 
-    if not error_msg:
+    error_str = str(error_msg).strip()
+
+    if not error_str:
         return False
 
-    error_msg = str(error_msg).lower()
+    error_lower = error_str.lower()
 
-    return any(
-        keyword in error_msg
-        for keyword in _DEAD_INDICATORS
-    )
+    return any(keyword in error_lower for keyword in _DEAD_INDICATORS)
 
 
-def get_time():
+def get_time() -> str:
+    """Return current time formatted as DD/MM/YYYY HH:MM:SS."""
     return datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
 
-def extract_cc(text):
+def extract_cc(text: str) -> list:
+    """Extract credit card details from text."""
+    if not text or not isinstance(text, str):
+        return []
+
     pattern = r'(\d{15,16})\|(\d{2})\|(\d{2,4})\|(\d{3,4})'
     matches = re.findall(pattern, text)
     cards = []
+
     for match in matches:
         card, month, year, cvv = match
+
+        # Normalize 2-digit year to 4-digit
         if len(year) == 2:
             year = "20" + year
+
+        # Basic validation
+        if not (1 <= int(month) <= 12):
+            continue
+
         cards.append(f"{card}|{month}|{year}|{cvv}")
+
     return cards
 
 
-def format_elapsed(seconds):
+def format_elapsed(seconds: int) -> str:
+    """Format elapsed seconds into hours, minutes, seconds string."""
+    if not isinstance(seconds, (int, float)) or seconds < 0:
+        return "0h 0m 0s"
+
+    seconds = int(seconds)
     hours = seconds // 3600
     minutes = (seconds % 3600) // 60
     secs = seconds % 60
@@ -155,21 +166,27 @@ def format_elapsed(seconds):
     return f"{hours}h {minutes}m {secs}s"
 
 
-def safe_int(value, default=0):
+def safe_int(value, default: int = 0) -> int:
+    """Safely convert value to int, returning default on failure."""
     try:
         return int(value)
-    except:
+    except (ValueError, TypeError):
         return default
 
 
-def safe_float(value, default=0.0):
+def safe_float(value, default: float = 0.0) -> float:
+    """Safely convert value to float, returning default on failure."""
     try:
         return float(value)
-    except:
+    except (ValueError, TypeError):
         return default
 
 
-def mask_card(card):
+def mask_card(card: str) -> str:
+    """Mask credit card number, keeping first 6 and last 4 digits visible."""
+    if not card or not isinstance(card, str):
+        return card
+
     try:
         parts = card.split("|")
 
@@ -178,12 +195,17 @@ def mask_card(card):
 
         cc = parts[0]
 
-        return (
+        if len(cc) < 10:
+            return card
+
+        masked = (
             f"{cc[:6]}"
             f"{'*' * (len(cc) - 10)}"
             f"{cc[-4:]}"
             f"|{parts[1]}|{parts[2]}|***"
         )
 
-    except:
+        return masked
+
+    except (AttributeError, IndexError):
         return card
